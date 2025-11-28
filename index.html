@@ -1,103 +1,21 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Parquinho App - Terra do Sol</title>
-
-  <!-- Manifest (PWA) -->
-  <link rel="manifest" href="manifest.json" />
-
-  <!-- CSS -->
-  <link rel="stylesheet" href="css/style.css" />
-
-  <!-- QRCode + jsQR -->
-  <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/jsqr/dist/jsQR.min.js"></script>
-</head>
-
-<body>
-  <!-- HEADER -->
-  <header>
-    <div class="brand">
-      <img alt="logo" id="appLogo" src="logo-terra-do-sol.png" />
-      <h1 id="appTitle">Parquinho App - Terra do Sol</h1>
-    </div>
-
-    <nav>
-      <button data-tab="cadastro" class="active">Cadastro</button>
-      <button data-tab="busca">Busca</button>
-      <button data-tab="historico">Histórico</button>
-      <button data-tab="marketing">Marketing</button>
-      <button data-tab="impressao">Impressão</button>
-    </nav>
-  </header>
-
-  <!-- MAIN -->
-  <main>
-
-    <!-- === CADASTRO === -->
-    <section id="cadastro" class="tab active">
-      <div class="card">
-        <h2>Cadastro de Criança</h2>
-
-        <form id="formCadastro">
-          <label>Nome da Criança</label>
-          <input type="text" id="nomeCrianca" required />
-
-          <label>Idade</label>
-          <input type="number" id="idadeCrianca" required />
-
-          <label>Responsável</label>
-          <input type="text" id="nomeResponsavel" required />
-
-          <label>Telefone</label>
-          <input type="tel" id="telefoneResponsavel" required />
-
-          <button type="submit">Cadastrar e Gerar QR Code</button>
-        </form>
-
-        <div id="qrCodeCadastro"></div>
-      </div>
-    </section>
-
-    <!-- === BUSCA === -->
-    <section id="busca" class="tab">
-      <div class="card">
-        <h2>Buscar Criança</h2>
-        <input id="inputBusca" placeholder="Digite nome da criança ou responsável..." />
-        <ul id="listaBusca"></ul>
-      </div>
-    </section>
-
-    <!-- === HISTÓRICO === -->
-    <section id="historico" class="tab">
-      <div class="card">
-        <h2>Histórico</h2>
-        <div id="listaHistoricoContainer"></div>
-      </div>
-    </section>
-
-    <!-- === MARKETING === -->
-    <section id="marketing" class="tab">
-      <div class="card">
-        <h2>Contatos para WhatsApp</h2>
-        <div id="marketingList"></div>
-      </div>
-    </section>
-
-    <!-- === IMPRESSÃO === -->
-    <section id="impressao" class="tab">
-      <div class="card">
-        <h2>Gerar Relatório</h2>
-        <button id="btnImprimir">Imprimir Relatório</button>
-        <div id="relatorioPrint" class="report-wrapper"></div>
-      </div>
-    </section>
-
-  </main>
-
-  <!-- SCRIPTS -->
-  <script src="script.js"></script>
-</body>
-</html>
+{
+  "name": "Parquinho - Terra do Sol",
+  "short_name": "Parquinho",
+  "start_url": "index.html",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#00B3AA",
+  "icons": [
+    {
+      "src": "assets/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "assets/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
