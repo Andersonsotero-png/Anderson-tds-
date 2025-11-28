@@ -5,8 +5,13 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Parquinho App - Terra do Sol</title>
 
-  <!-- Manifest apontando para os ícones corrigidos -->
+  <!-- PWA -->
   <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#00B3AA">
+
+  <!-- Ícone fallback para navegadores -->
+  <link rel="icon" href="assets/icons/icon-192.png" sizes="192x192" />
+  <link rel="apple-touch-icon" href="assets/icons/icon-192.png" />
 
   <link rel="stylesheet" href="css/style.css" />
 
@@ -46,7 +51,7 @@
         </label>
 
         <label>Nome do responsável:
-          <input type="text" name="responsavel" />
+          <input type="text" name="responsavel" placeholder="Nome do responsável" />
         </label>
 
         <label>Telefone do responsável:
@@ -65,7 +70,7 @@
           </select>
         </label>
 
-        <label>Mesa:
+        <label>Mesa (ex: Mesa 12 / A5):
           <input type="text" name="mesa" />
         </label>
 
@@ -94,6 +99,7 @@
           </select>
         </label>
 
+        <!-- badge que mostra cor da pulseira ao vivo -->
         <div style="margin-top:8px">
           <span id="liveBadge" class="badge red">NÃO SAI SOZINHO</span>
         </div>
@@ -121,11 +127,11 @@
       <hr />
 
       <div id="cameraControls" class="card">
-        <h3>Leitor de QR (Câmera)</h3>
+        <h3>Leitor de QR (Câmera) — Modo: BOTÃO (Opção B)</h3>
         <div class="row">
           <button id="btnStartCamera">Abrir câmera</button>
           <button id="btnStopCamera" disabled>Fechar câmera</button>
-          <button id="btnScanNow" disabled>Escanear QR</button>
+          <button id="btnScanNow" disabled>Escanear QR (ler agora)</button>
           <button id="btnRegistrarManual">Registrar Manual</button>
         </div>
 
@@ -149,7 +155,7 @@
       <div id="listaHistoricoContainer"></div>
       <div class="row">
         <button id="btnExportJSON">Exportar JSON</button>
-        <button id="btnLimparTudo">Limpar tudo</button>
+        <button id="btnLimparTudo">Limpar tudo (apagar local)</button>
       </div>
     </section>
 
@@ -159,19 +165,19 @@
 
       <div class="card">
         <h4>Mensagem / Promoção</h4>
-        <textarea id="marketingMessage" placeholder="Escreva a mensagem..."></textarea>
-        <label>Anexar imagem:
+        <textarea id="marketingMessage" placeholder="Escreva a mensagem a enviar..."></textarea>
+        <label>Anexar imagem (opcional):
           <input type="file" id="marketingImage" accept="image/*" />
         </label>
         <div class="row">
           <button id="btnSelectAll">Selecionar todos</button>
           <button id="btnClearAll">Limpar seleção</button>
-          <button id="btnSendToSelected">Enviar</button>
+          <button id="btnSendToSelected">Enviar para selecionados</button>
         </div>
       </div>
 
       <div class="card" id="marketingListWrapper">
-        <h4>Lista de clientes</h4>
+        <h4>Lista de clientes (todos os cadastros)</h4>
         <div id="marketingList"></div>
       </div>
     </section>
@@ -182,7 +188,7 @@
 
       <div class="card">
         <div class="row">
-          <label>Filtro:
+          <label>Filtro rápido:
             <select id="quickFilter">
               <option value="hoje">Hoje</option>
               <option value="ontem">Ontem</option>
@@ -191,17 +197,14 @@
               <option value="intervalo">Intervalo...</option>
             </select>
           </label>
-
-          <label>Início:
+          <label>Data inicial:
             <input type="date" id="filterFrom" />
           </label>
-
-          <label>Fim:
+          <label>Data final:
             <input type="date" id="filterTo" />
           </label>
-
           <button id="btnFiltrar">Filtrar</button>
-          <button id="btnImprimirFiltro">Imprimir</button>
+          <button id="btnImprimirFiltro">Imprimir Lista de Cadastros</button>
         </div>
       </div>
 
