@@ -5,24 +5,25 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Parquinho App - Terra do Sol</title>
 
-  <!-- PWA -->
+  <!-- Manifest corrigido -->
   <link rel="manifest" href="manifest.json" />
-  <meta name="theme-color" content="#00B3AA">
 
-  <!-- Ícone fallback para navegadores -->
-  <link rel="icon" href="assets/icons/icon-192.png" sizes="192x192" />
-  <link rel="apple-touch-icon" href="assets/icons/icon-192.png" />
+  <!-- Ícone do navegador (favicon) -->
+  <link rel="icon" sizes="192x192" href="icon-192.png" />
+  <link rel="icon" sizes="512x512" href="icon-512.png" />
 
+  <!-- CSS -->
   <link rel="stylesheet" href="css/style.css" />
 
-  <!-- QRCode + jsQR -->
+  <!-- QR libs -->
   <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jsqr/dist/jsQR.min.js"></script>
 </head>
 <body>
   <header>
     <div class="brand">
-      <img alt="logo" id="appLogo" src="assets/img/logo-terra-do-sol.png" />
+      <!-- Logo corrigida para a raiz -->
+      <img alt="logo" id="appLogo" src="logo-terra-do-sol.png" />
       <h1 id="appTitle">Parquinho App - Terra do Sol</h1>
     </div>
     <nav>
@@ -38,6 +39,7 @@
     <!-- CADASTRO -->
     <section id="cadastro" class="tab active">
       <form id="formCadastro" autocomplete="off">
+
         <label>Nome completo (criança):
           <input type="text" name="nome" required />
         </label>
@@ -99,7 +101,6 @@
           </select>
         </label>
 
-        <!-- badge que mostra cor da pulseira ao vivo -->
         <div style="margin-top:8px">
           <span id="liveBadge" class="badge red">NÃO SAI SOZINHO</span>
         </div>
@@ -131,7 +132,7 @@
         <div class="row">
           <button id="btnStartCamera">Abrir câmera</button>
           <button id="btnStopCamera" disabled>Fechar câmera</button>
-          <button id="btnScanNow" disabled>Escanear QR (ler agora)</button>
+          <button id="btnScanNow" disabled>Escanear QR</button>
           <button id="btnRegistrarManual">Registrar Manual</button>
         </div>
 
@@ -155,7 +156,7 @@
       <div id="listaHistoricoContainer"></div>
       <div class="row">
         <button id="btnExportJSON">Exportar JSON</button>
-        <button id="btnLimparTudo">Limpar tudo (apagar local)</button>
+        <button id="btnLimparTudo">Limpar tudo</button>
       </div>
     </section>
 
@@ -165,7 +166,7 @@
 
       <div class="card">
         <h4>Mensagem / Promoção</h4>
-        <textarea id="marketingMessage" placeholder="Escreva a mensagem a enviar..."></textarea>
+        <textarea id="marketingMessage"></textarea>
         <label>Anexar imagem (opcional):
           <input type="file" id="marketingImage" accept="image/*" />
         </label>
@@ -177,7 +178,7 @@
       </div>
 
       <div class="card" id="marketingListWrapper">
-        <h4>Lista de clientes (todos os cadastros)</h4>
+        <h4>Lista de clientes</h4>
         <div id="marketingList"></div>
       </div>
     </section>
@@ -188,7 +189,7 @@
 
       <div class="card">
         <div class="row">
-          <label>Filtro rápido:
+          <label>Filtro:
             <select id="quickFilter">
               <option value="hoje">Hoje</option>
               <option value="ontem">Ontem</option>
@@ -204,7 +205,7 @@
             <input type="date" id="filterTo" />
           </label>
           <button id="btnFiltrar">Filtrar</button>
-          <button id="btnImprimirFiltro">Imprimir Lista de Cadastros</button>
+          <button id="btnImprimirFiltro">Imprimir Lista</button>
         </div>
       </div>
 
@@ -212,6 +213,7 @@
     </section>
   </main>
 
+  <!-- Script -->
   <script src="js/script.js"></script>
 </body>
 </html>
