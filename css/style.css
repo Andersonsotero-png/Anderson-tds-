@@ -27,6 +27,7 @@ form label{display:block;margin:8px 0;font-weight:600}
 form input, form textarea, form select{width:100%;padding:10px;border-radius:8px;border:1px solid #e6e6e6;background:#fff;margin-top:6px}
 textarea{min-height:80px;resize:vertical}
 .row{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.row button { margin-bottom: 8px; } /* melhora espaçamento vertical */
 button{background:var(--orange-strong);color:var(--white);border:none;padding:10px 12px;border-radius:8px;cursor:pointer;font-weight:700}
 button.secondary{background:var(--teal-light)}
 #qrCodeCadastro{margin-top:12px;display:flex;gap:8px;flex-wrap:wrap}
@@ -44,6 +45,9 @@ button.secondary{background:var(--teal-light)}
 .badge.yellow{background:var(--yellow);color:#333}
 #btnScanNow{background:#0066cc;color:#fff}
 @media(min-width:900px){main{padding:24px}nav{gap:12px}}
+
+/* spacing between adjacent buttons */
+button + button { margin-left: 6px; }
 
 /* print-specific */
 @media print {
