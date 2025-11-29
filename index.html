@@ -5,23 +5,27 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Parquinho App - Terra do Sol</title>
 
-  <!-- PWA -->
-  <link rel="manifest" href="manifest.json" />
+  <!-- Manifest (PWA) -->
+  <link rel="manifest" href="/manifest.json" />
+
+  <!-- Fallback / ícone para navegadores e iOS -->
+  <link rel="icon" type="image/png" href="/assets/icons/icon-192.png" sizes="192x192" />
+  <link rel="apple-touch-icon" href="/assets/icons/icon-192.png" />
+
+  <!-- Tema da barra (Android) -->
   <meta name="theme-color" content="#00B3AA">
 
-  <!-- Ícone fallback para navegadores -->
-  <link rel="icon" href="assets/icons/icon-192.png" sizes="192x192" />
-  <link rel="apple-touch-icon" href="assets/icons/icon-192.png" />
-
+  <!-- CSS -->
   <link rel="stylesheet" href="css/style.css" />
 
-  <!-- QRCode + jsQR -->
+  <!-- QR libs -->
   <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jsqr/dist/jsQR.min.js"></script>
 </head>
 <body>
   <header>
     <div class="brand">
+      <!-- logo apontando para onde sua imagem real deve ficar -->
       <img alt="logo" id="appLogo" src="assets/img/logo-terra-do-sol.png" />
       <h1 id="appTitle">Parquinho App - Terra do Sol</h1>
     </div>
@@ -99,7 +103,6 @@
           </select>
         </label>
 
-        <!-- badge que mostra cor da pulseira ao vivo -->
         <div style="margin-top:8px">
           <span id="liveBadge" class="badge red">NÃO SAI SOZINHO</span>
         </div>
