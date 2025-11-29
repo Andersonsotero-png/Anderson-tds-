@@ -1,5 +1,5 @@
-
-// script.js — Versão consolidada (mantém as funções originais + edições solicitadas)
+// script.js — Versão final solicitada pelo Anderson
+// mantém suas funcionalidades e aplica as mudanças pedidas
 
 // utilitários
 const $ = s => document.querySelector(s);
@@ -31,7 +31,7 @@ const listaBusca = $('#listaBusca');
 const listaHistoricoContainer = $('#listaHistoricoContainer');
 const btnStartCamera = $('#btnStartCamera');
 const btnStopCamera = $('#btnStopCamera');
-const btnScanNow = $('#btnScanNow');
+const btnScanNow = $('#btnScanNow'); // texto: "Registrar Entrada/Saída"
 const video = $('#video');
 const canvas = $('#scanCanvas');
 const scanMessage = $('#scanMessage');
@@ -470,7 +470,7 @@ btnStartCamera && btnStartCamera.addEventListener('click', async () => {
     cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio:false });
     video.srcObject = cameraStream; video.play();
     btnStartCamera.disabled = true; btnStopCamera.disabled = false; btnScanNow.disabled = false;
-    scanMessage.textContent = `Câmera aberta — Operador: ${currentOperator}. Clique em "Escanear QR" para ler.`;
+    scanMessage.textContent = `Câmera aberta — Operador: ${currentOperator}. Clique em "Registrar Entrada/Saída" para ler.`;
   } catch(err) {
     console.error(err); alert('Erro ao acessar câmera: ' + (err.message || err));
   }
@@ -726,9 +726,9 @@ function buildReportHTML(list, periodLabel){
   });
 
   let html = `<div id="relatorioPrint" class="report-wrapper">
-    <img class="report-watermark" src="assets/img/logo-terra-do-sol.png" alt="marca" />
+    <img class="report-watermark" src="assets/icons/icon-512.png" alt="marca" />
     <div class="report-header">
-      <img src="assets/img/logo-terra-do-sol.png" alt="logo" />
+      <img src="assets/icons/icon-512.png" alt="logo" />
       <div>
         <div class="report-title">Relatório – Terra do Sol – Parquinho Infantil</div>
         <div class="report-meta">Período selecionado: ${periodLabel}</div>
@@ -803,17 +803,14 @@ function attachPrintFilterEvents(){
     setTimeout(()=> w.print(), 500);
   });
 
-  // botão voltar impressão (já injetado no HTML)
-  if (btnVoltarImpressao) btnVoltarImpressao.addEventListener('click', () => window.history.back());
+  // botão voltar impressão: volta para a aba cadastro (sem criar print.html)
+  if (btnVoltarImpressao) btnVoltarImpressao.addEventListener('click', () => {
+    document.querySelector('nav button[data-tab="cadastro"]').click();
+  });
 }
 
 /* ---------- FUNÇÕES DE EDIÇÃO (nova) ---------- */
 
-/**
- * abrirEdicao(id)
- * Preenche o formulário com os dados do cadastro e ativa o modo 'edição'.
- * Quando o usuário salvar o formulário (submit), o registro será atualizado em vez de criado.
- */
 function abrirEdicao(id){
   const c = cadastros.find(x => x.id === id);
   if (!c) { alert('Cadastro não encontrado para edição'); return; }
