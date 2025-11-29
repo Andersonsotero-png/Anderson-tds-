@@ -5,25 +5,19 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Parquinho App - Terra do Sol</title>
 
-  <!-- Manifest corrigido -->
+  <!-- Manifest apontando para os ícones corrigidos -->
   <link rel="manifest" href="manifest.json" />
 
-  <!-- Ícone do navegador (favicon) -->
-  <link rel="icon" sizes="192x192" href="icon-192.png" />
-  <link rel="icon" sizes="512x512" href="icon-512.png" />
-
-  <!-- CSS -->
   <link rel="stylesheet" href="css/style.css" />
 
-  <!-- QR libs -->
+  <!-- QRCode + jsQR -->
   <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jsqr/dist/jsQR.min.js"></script>
 </head>
 <body>
   <header>
     <div class="brand">
-      <!-- Logo corrigida para a raiz -->
-      <img alt="logo" id="appLogo" src="logo-terra-do-sol.png" />
+      <img alt="logo" id="appLogo" src="assets/img/logo-terra-do-sol.png" />
       <h1 id="appTitle">Parquinho App - Terra do Sol</h1>
     </div>
     <nav>
@@ -39,7 +33,6 @@
     <!-- CADASTRO -->
     <section id="cadastro" class="tab active">
       <form id="formCadastro" autocomplete="off">
-
         <label>Nome completo (criança):
           <input type="text" name="nome" required />
         </label>
@@ -53,7 +46,7 @@
         </label>
 
         <label>Nome do responsável:
-          <input type="text" name="responsavel" placeholder="Nome do responsável" />
+          <input type="text" name="responsavel" />
         </label>
 
         <label>Telefone do responsável:
@@ -72,7 +65,7 @@
           </select>
         </label>
 
-        <label>Mesa (ex: Mesa 12 / A5):
+        <label>Mesa:
           <input type="text" name="mesa" />
         </label>
 
@@ -128,7 +121,7 @@
       <hr />
 
       <div id="cameraControls" class="card">
-        <h3>Leitor de QR (Câmera) — Modo: BOTÃO (Opção B)</h3>
+        <h3>Leitor de QR (Câmera)</h3>
         <div class="row">
           <button id="btnStartCamera">Abrir câmera</button>
           <button id="btnStopCamera" disabled>Fechar câmera</button>
@@ -166,14 +159,14 @@
 
       <div class="card">
         <h4>Mensagem / Promoção</h4>
-        <textarea id="marketingMessage"></textarea>
-        <label>Anexar imagem (opcional):
+        <textarea id="marketingMessage" placeholder="Escreva a mensagem..."></textarea>
+        <label>Anexar imagem:
           <input type="file" id="marketingImage" accept="image/*" />
         </label>
         <div class="row">
           <button id="btnSelectAll">Selecionar todos</button>
           <button id="btnClearAll">Limpar seleção</button>
-          <button id="btnSendToSelected">Enviar para selecionados</button>
+          <button id="btnSendToSelected">Enviar</button>
         </div>
       </div>
 
@@ -198,14 +191,17 @@
               <option value="intervalo">Intervalo...</option>
             </select>
           </label>
-          <label>Data inicial:
+
+          <label>Início:
             <input type="date" id="filterFrom" />
           </label>
-          <label>Data final:
+
+          <label>Fim:
             <input type="date" id="filterTo" />
           </label>
+
           <button id="btnFiltrar">Filtrar</button>
-          <button id="btnImprimirFiltro">Imprimir Lista</button>
+          <button id="btnImprimirFiltro">Imprimir</button>
         </div>
       </div>
 
@@ -213,7 +209,6 @@
     </section>
   </main>
 
-  <!-- Script -->
   <script src="js/script.js"></script>
 </body>
 </html>
