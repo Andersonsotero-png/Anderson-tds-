@@ -1,30 +1,22 @@
-const CACHE_NAME = 'parquinho-cache-v1';
-const FILES_TO_CACHE = [
+const CACHE_NAME = 'parquinho-v1';
+const PRECACHE_URLS = [
   '/',
   '/index.html',
   '/css/style.css',
   '/js/script.js',
-  '/manifest.json',
-  '/assets/img/logo-terra-do-sol.png'
+  '/assets/icons/icon-192.png',
+  '/assets/icons/icon-512.png'
 ];
 
-self.addEventListener('install', (evt) => {
-  evt.waitUntil(
-    caches.open(CACHE_NAME).then(cache => {
-      return cache.addAll(FILES_TO_CACHE);
-    })
-  );
+self.addEventListener('install', event => {
+  event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(PRECACHE_URLS)));
   self.skipWaiting();
 });
 
-self.addEventListener('activate', (evt) => {
-  evt.waitUntil(clients.claim());
+self.addEventListener('activate', event => {
+  event.waitUntil(self.clients.claim());
 });
 
-self.addEventListener('fetch', (evt) => {
-  evt.respondWith(
-    caches.match(evt.request).then(resp => {
-      return resp || fetch(evt.request);
-    })
-  );
+self.addEventListener('fetch', event => {
+  event.respondWith(caches.match(event.request).then(resp => resp || fetch(event.request)));
 });
