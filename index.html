@@ -10,9 +10,10 @@
 
   <link rel="stylesheet" href="css/style.css" />
 
-  <!-- QRCode + jsQR -->
+  <!-- Bibliotecas: QRCode, jsQR e SheetJS (XLSX) -->
   <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jsqr/dist/jsQR.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 <body>
   <header>
@@ -148,7 +149,8 @@
       <h2>Histórico de Cadastros e Movimentações</h2>
       <div id="listaHistoricoContainer"></div>
       <div class="row">
-        <button id="btnExportJSON">Exportar JSON</button>
+        <!-- mantive o id btnExportJSON para compatibilidade, mas agora ele gera EXCEL -->
+        <button id="btnExportJSON">Exportar Excel</button>
         <button id="btnLimparTudo">Limpar tudo</button>
       </div>
     </section>
@@ -202,6 +204,8 @@
 
           <button id="btnFiltrar">Filtrar</button>
           <button id="btnImprimirFiltro">Imprimir</button>
+          <!-- Botão voltar pedido -->
+          <button id="btnVoltarImpressao" type="button" style="background:#555">Voltar</button>
         </div>
       </div>
 
