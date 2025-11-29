@@ -1,12 +1,18 @@
-// script.js — versão organizada com filtro de impressão/relatório
+
+// script.js — Versão consolidada (mantém as funções originais + edições solicitadas)
+
+// utilitários
 const $ = s => document.querySelector(s);
 const $$ = s => Array.from(document.querySelectorAll(s));
 const nowISO = () => new Date().toISOString();
 const uid = () => Date.now().toString();
+function escapeHtml(s){ return (s||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
+// estado
 let cadastros = JSON.parse(localStorage.getItem('cadastros') || '[]');
 let cameraStream = null;
 let currentOperator = '';
+let idEmEdicao = null;
 
 /* UI refs */
 const tabs = $$('nav button');
@@ -34,15 +40,14 @@ const btnGerarTodosQR = $('#btnGerarTodosQR');
 const btnDownloadQR = $('#btnDownloadQR');
 const btnPrintLabel = $('#btnPrintLabel');
 const btnPrintLabelSmall = $('#btnPrintLabelSmall');
-const btnImprimir = $('#btnImprimir');
+const btnExportJSON = $('#btnExportJSON');
+const btnLimparTudo = $('#btnLimparTudo');
 const marketingList = $('#marketingList');
 const btnSelectAll = $('#btnSelectAll');
 const btnClearAll = $('#btnClearAll');
 const btnSendToSelected = $('#btnSendToSelected');
 const marketingMessage = $('#marketingMessage');
 const marketingImage = $('#marketingImage');
-const btnExportJSON = $('#btnExportJSON');
-const btnLimparTudo = $('#btnLimparTudo');
 
 /* Impressão refs */
 const quickFilter = $('#quickFilter');
@@ -51,6 +56,7 @@ const filterTo = $('#filterTo');
 const btnFiltrar = $('#btnFiltrar');
 const btnImprimirFiltro = $('#btnImprimirFiltro');
 const relatorioPreview = $('#relatorioPreview');
+const btnVoltarImpressao = $('#btnVoltarImpressao');
 
 /* Tabs */
 tabs.forEach(t => t.addEventListener('click', () => {
@@ -110,10 +116,12 @@ updateLiveBadge();
 /* persistence */
 function saveCadastros(){ localStorage.setItem('cadastros', JSON.stringify(cadastros)); }
 
-/* form submit */
+/* form submit (criar ou salvar edição) */
 if (form) {
   form.addEventListener('submit', e => {
     e.preventDefault();
+
+    // coletar dados do form
     const nome = (form.elements['nome'].value || '').trim();
     const dataNascimento = form.elements['dataNascimento'].value;
     const idade = form.elements['idade'].value || calcularIdade(new Date(dataNascimento));
@@ -130,9 +138,30 @@ if (form) {
 
     if (!nome || !dataNascimento) { alert('Preencha nome e data de nascimento'); return; }
 
-    // existência (nome + nascimento) ou telefone
+    if (idEmEdicao) {
+      // salvar edição
+      const idx = cadastros.findIndex(c => c.id === idEmEdicao);
+      if (idx === -1) { alert('Erro ao salvar edição.'); idEmEdicao = null; return; }
+      const atual = cadastros[idx];
+      cadastros[idx] = {
+        ...atual,
+        nome, dataNascimento, idade, responsavel, telefone, email,
+        setor, mesa, temAlergia, qualAlergia, altura, saiSozinho, observacoes
+      };
+      saveCadastros();
+      idEmEdicao = null;
+      alert('Cadastro atualizado!');
+      form.reset();
+      alergiaLabel.style.display = 'none';
+      updateLiveBadge();
+      renderHistorico();
+      renderMarketingList();
+      return;
+    }
+
+    // criação nova entrada
     const exists = cadastros.find(c =>
-      (c.nome.toLowerCase() === nome.toLowerCase() && c.dataNascimento === dataNascimento) ||
+      (c.nome && c.nome.toLowerCase() === nome.toLowerCase() && c.dataNascimento === dataNascimento) ||
       (c.telefone && telefone && c.telefone === telefone)
     );
     if (exists) {
@@ -176,6 +205,7 @@ if (form) {
 function generateQRCodeCanvas(id){
   if(!qrDiv) return;
   qrDiv.innerHTML = '';
+  // usamos o id simples como payload (para buscar por id)
   QRCode.toCanvas(String(id), { width: 160 }, (err, canvasEl) => {
     if (err) { qrDiv.textContent = 'Erro ao gerar QR'; console.error(err); return; }
     qrDiv.appendChild(canvasEl);
@@ -183,15 +213,14 @@ function generateQRCodeCanvas(id){
 }
 
 /* download QR */
-if ($('#btnDownloadQR')) $('#btnDownloadQR').addEventListener('click', () => {
+if (btnDownloadQR) btnDownloadQR.addEventListener('click', () => {
   const c = qrDiv.querySelector('canvas');
   if (!c) return alert('Nenhum QR disponível. Gere um cadastro primeiro.');
   const url = c.toDataURL('image/png');
   const a = document.createElement('a'); a.href = url; a.download = 'qr-cadastro.png'; a.click();
 });
 
-/* print label wrappers (as before) */
-function escapeHtml(s){ return (s||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+/* print label wrappers */
 function getBadgeClass(c){
   if (c.saiSozinho === 'sim') return 'green';
   if (c.altura === 'maior' && c.saiSozinho === 'nao') return 'yellow';
@@ -263,7 +292,7 @@ if (btnGerarTodosQR) btnGerarTodosQR.addEventListener('click', () => {
   });
 });
 
-/* busca */
+/* busca (adicionada opção de Alterar Cadastro) */
 if (inputBusca) inputBusca.addEventListener('input', () => {
   const termo = inputBusca.value.toLowerCase().trim();
   if (!listaBusca) return;
@@ -279,15 +308,21 @@ if (inputBusca) inputBusca.addEventListener('input', () => {
     const li = document.createElement('li'); li.className = 'card';
     const badgeHTML = `<span class="badge ${getBadgeClass(c)}">${getBadgeText(c)}</span>`;
     li.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center">
-      <div><strong>${c.nome}</strong> <small>(${c.idade} anos)</small><br>
-        <small>Setor: ${c.setor||'-'} • Mesa: ${c.mesa||'-'}</small><br>
-        <small>Alergia: ${(c.temAlergia==='sim')? (c.qualAlergia || 'Sim') : 'Não'}</small>
-        <div>Tel: ${c.telefone||'-'} • Status: ${(c.status==='dentro')? 'No parque' : 'Fora do parque'}</div>
+      <div><strong>${escapeHtml(c.nome)}</strong> <small>(${escapeHtml(c.idade)} anos)</small><br>
+        <small>Setor: ${escapeHtml(c.setor||'-')} • Mesa: ${escapeHtml(c.mesa||'-')}</small><br>
+        <small>Alergia: ${(c.temAlergia==='sim')? (escapeHtml(c.qualAlergia) || 'Sim') : 'Não'}</small>
+        <div>Tel: ${escapeHtml(c.telefone||'-')} • Status: ${(c.status==='dentro')? 'No parque' : 'Fora do parque'}</div>
       </div>
-      <div style="text-align:right">${badgeHTML}<br><button data-id="${c.id}" class="btnRegistrar">Registrar Entrada/Saída</button><br><button data-id="${c.id}" class="btnPrintSmall">Imprimir etiqueta</button></div>
+      <div style="text-align:right">
+        ${badgeHTML}<br>
+        <button data-id="${c.id}" class="btnRegistrar">Registrar Entrada/Saída</button><br>
+        <button data-id="${c.id}" class="btnPrintSmall">Imprimir etiqueta</button><br>
+        <button data-id="${c.id}" class="btnAlterar">Alterar Cadastro</button>
+      </div>
     </div>`;
     listaBusca.appendChild(li);
   });
+  // ligar eventos
   $$('.btnRegistrar').forEach(b => b.addEventListener('click', ev => registrarEntradaSaida(ev.target.dataset.id)));
   $$('.btnPrintSmall').forEach(b => b.addEventListener('click', ev => {
     const id = ev.target.dataset.id;
@@ -295,6 +330,7 @@ if (inputBusca) inputBusca.addEventListener('input', () => {
     if (!c) return;
     QRCode.toDataURL(String(c.id), { width:200 }).then(url => printLabelForCadastro(c, url, 'small'));
   }));
+  $$('.btnAlterar').forEach(b => b.addEventListener('click', ev => abrirEdicao(ev.target.dataset.id)));
 });
 
 /* histórico */
@@ -307,10 +343,10 @@ function renderHistorico(){
     const entradasList = (c.entradas||[]).map(t => `${new Date(t.ts).toLocaleString()} — ${escapeHtml(t.operator||'')}`).join('<br>') || '-';
     const saidasList = (c.saidas||[]).map(t => `${new Date(t.ts).toLocaleString()} — ${escapeHtml(t.operator||'')}`).join('<br>') || '-';
     const badgeHTML = `<span class="badge ${getBadgeClass(c)}">${getBadgeText(c)}</span>`;
-    div.innerHTML = `<strong>${c.nome}</strong> <small>${c.idade} anos</small>
+    div.innerHTML = `<strong>${escapeHtml(c.nome)}</strong> <small>${escapeHtml(c.idade)} anos</small>
       <div>Responsável: ${escapeHtml(c.responsavel||'-')} | Tel: ${escapeHtml(c.telefone||'-')}</div>
-      <div>Setor: ${c.setor || '-'} | Mesa: ${c.mesa || '-'}</div>
-      <div>Alergia: ${(c.temAlergia === 'sim') ? (c.qualAlergia || 'Sim') : 'Não'}</div>
+      <div>Setor: ${escapeHtml(c.setor || '-')} | Mesa: ${escapeHtml(c.mesa || '-')}</div>
+      <div>Alergia: ${(c.temAlergia === 'sim') ? (escapeHtml(c.qualAlergia) || 'Sim') : 'Não'}</div>
       <div>Status atual: <strong>${c.status === 'dentro' ? '🟢 No parque' : '🔴 Fora do parque'}</strong> ${badgeHTML}</div>
       <div style="margin-top:8px"><strong>Entradas:</strong><br>${entradasList}</div>
       <div style="margin-top:8px"><strong>Saídas:</strong><br>${saidasList}</div>
@@ -319,6 +355,7 @@ function renderHistorico(){
         <button data-id="${c.id}" class="btnExcluir">Excluir</button>
         <button data-id="${c.id}" class="btnImprimirFicha">Imprimir ficha</button>
         <button data-id="${c.id}" class="btnPrintSmall">Imprimir etiqueta</button>
+        <button data-id="${c.id}" class="btnAlterar">Alterar Cadastro</button>
       </div>`;
     listaHistoricoContainer.appendChild(div);
   });
@@ -331,6 +368,7 @@ function renderHistorico(){
     if (!c) return;
     QRCode.toDataURL(String(c.id), { width:200 }).then(url => printLabelForCadastro(c, url, 'small'));
   }));
+  $$('.btnAlterar').forEach(b => b.addEventListener('click', ev => abrirEdicao(ev.target.dataset.id)));
 }
 renderHistorico();
 
@@ -348,14 +386,14 @@ function imprimirFicha(id){
   const c = cadastros.find(x => x.id === id);
   if(!c){ alert('Cadastro não encontrado'); return; }
   const w = window.open('', '_blank');
-  const html = `<html><head><meta charset="utf-8"><title>Ficha - ${c.nome}</title>
+  const html = `<html><head><meta charset="utf-8"><title>Ficha - ${escapeHtml(c.nome)}</title>
       <style>body{font-family:Arial;padding:16px}</style></head><body>
-      <h2>${c.nome}</h2>
-      <div>Idade: ${c.idade}</div>
-      <div>Nascido em: ${c.dataNascimento}</div>
-      <div>Setor: ${c.setor||'-'} | Mesa: ${c.mesa||'-'}</div>
-      <div>Alergia: ${(c.temAlergia === 'sim') ? (c.qualAlergia || 'Sim') : 'Não'}</div>
-      <div>Responsável: ${c.responsavel || '-' } | Tel: ${c.telefone || '-'}</div>
+      <h2>${escapeHtml(c.nome)}</h2>
+      <div>Idade: ${escapeHtml(c.idade)}</div>
+      <div>Nascido em: ${escapeHtml(c.dataNascimento)}</div>
+      <div>Setor: ${escapeHtml(c.setor||'-')} | Mesa: ${escapeHtml(c.mesa||'-')}</div>
+      <div>Alergia: ${(c.temAlergia === 'sim') ? (escapeHtml(c.qualAlergia) || 'Sim') : 'Não'}</div>
+      <div>Responsável: ${escapeHtml(c.responsavel || '-') } | Tel: ${escapeHtml(c.telefone || '-')}</div>
       <hr>
       <div><strong>Entradas:</strong><br>${(c.entradas||[]).map(t => new Date(t.ts).toLocaleString()+" — "+escapeHtml(t.operator||'')).join('<br>') || '-'}</div>
       <div><strong>Saídas:</strong><br>${(c.saidas||[]).map(t => new Date(t.ts).toLocaleString()+" — "+escapeHtml(t.operator||'')).join('<br>') || '-'}</div>
@@ -502,7 +540,8 @@ if (btnRegistrarManual) btnRegistrarManual.addEventListener('click', () => {
   registrarEntradaSaida(found.id);
 });
 
-/* imprimir lista */
+/* imprimir lista (botão geral, se necessário) */
+const btnImprimir = $('#btnImprimir');
 if (btnImprimir) btnImprimir.addEventListener('click', () => {
   if (!cadastros.length){ alert('Nenhum cadastro para imprimir'); return; }
   const w = window.open('', '_blank');
@@ -510,15 +549,15 @@ if (btnImprimir) btnImprimir.addEventListener('click', () => {
     <style>body{font-family:Arial;padding:16px} table{width:100%;border-collapse:collapse} th,td{border:1px solid #ddd;padding:8px}</style></head><body>
     <h2>Lista de Cadastros</h2><table><thead><tr><th>Nome</th><th>Idade</th><th>Tel</th><th>Email</th><th>Setor/Mesa</th><th>Status</th></tr></thead><tbody>`;
   cadastros.forEach(c => {
-    html += `<tr><td>${c.nome}</td><td>${c.idade}</td><td>${c.telefone||'-'}</td><td>${c.email||'-'}</td>
-      <td>${c.setor||'-'} / ${c.mesa||'-'}</td><td>${c.status==='dentro' ? 'No parque' : 'Fora do parque'}</td></tr>`;
+    html += `<tr><td>${escapeHtml(c.nome)}</td><td>${escapeHtml(c.idade)}</td><td>${escapeHtml(c.telefone||'-')}</td><td>${escapeHtml(c.email||'-')}</td>
+      <td>${escapeHtml(c.setor||'-')} / ${escapeHtml(c.mesa||'-')}</td><td>${c.status==='dentro' ? 'No parque' : 'Fora do parque'}</td></tr>`;
   });
   html += '</tbody></table></body></html>';
   w.document.write(html); w.document.close();
   setTimeout(()=> w.print(), 500);
 });
 
-/* MARKETING: render list (Opção A = todos) */
+/* MARKETING: render list */
 function renderMarketingList(){
   if (!marketingList) return;
   marketingList.innerHTML = '';
@@ -527,7 +566,7 @@ function renderMarketingList(){
     const row = document.createElement('div'); row.className = 'contact-row';
     const chk = document.createElement('input'); chk.type = 'checkbox'; chk.dataset.id = c.id;
     const meta = document.createElement('div'); meta.className = 'contact-meta';
-    meta.innerHTML = `<strong>${c.nome}</strong><br><small>Tel: ${c.telefone||'-'} • Email: ${c.email||'-'} • Mesa: ${c.mesa||'-'}</small>`;
+    meta.innerHTML = `<strong>${escapeHtml(c.nome)}</strong><br><small>Tel: ${escapeHtml(c.telefone||'-')} • Email: ${escapeHtml(c.email||'-')} • Mesa: ${escapeHtml(c.mesa||'-')}</small>`;
     const actions = document.createElement('div'); actions.className = 'contact-actions';
     const telBtn = document.createElement('button'); telBtn.textContent='Ligar'; telBtn.addEventListener('click', ()=> window.open(`tel:${c.telefone||''}`));
     const waBtn = document.createElement('button'); waBtn.textContent='WhatsApp'; waBtn.addEventListener('click', ()=> openWhatsApp(c.telefone));
@@ -592,25 +631,54 @@ if (btnSendToSelected) btnSendToSelected.addEventListener('click', async () => {
 });
 
 /* Export / clear */
+// btnExportJSON agora gera Excel (.xlsx) usando SheetJS
 if (btnExportJSON) btnExportJSON.addEventListener('click', () => {
-  const blob = new Blob([JSON.stringify(cadastros, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a'); a.href = url; a.download = 'cadastros-parquinho.json'; a.click();
-  URL.revokeObjectURL(url);
-});
-if (btnLimparTudo) btnLimparTudo.addEventListener('click', () => {
-  if (!confirm('Apagar todos os dados locais?')) return;
-  localStorage.clear(); cadastros = []; renderHistorico(); renderMarketingList(); alert('Dados apagados.');
+  if (!cadastros.length) { alert('Sem dados para exportar.'); return; }
+  // preparar dados (podemos limpar campos pesados)
+  const dataForExport = cadastros.map(c => ({
+    id: c.id,
+    nome: c.nome,
+    dataNascimento: c.dataNascimento,
+    idade: c.idade,
+    responsavel: c.responsavel,
+    telefone: c.telefone,
+    email: c.email,
+    setor: c.setor,
+    mesa: c.mesa,
+    temAlergia: c.temAlergia,
+    qualAlergia: c.qualAlergia,
+    altura: c.altura,
+    saiSozinho: c.saiSozinho,
+    observacoes: c.observacoes,
+    status: c.status,
+    createdAt: c.createdAt
+  }));
+  // criar worksheet & workbook
+  const worksheet = XLSX.utils.json_to_sheet(dataForExport);
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Histórico");
+  // salvar
+  XLSX.writeFile(workbook, "historico-parquinho.xlsx");
 });
 
-/* Service worker */
+// Limpar tudo
+if (btnLimparTudo) btnLimparTudo.addEventListener('click', () => {
+  if (!confirm('Apagar todos os dados locais?')) return;
+  localStorage.removeItem('cadastros');
+  cadastros = [];
+  renderHistorico();
+  renderMarketingList();
+  alert('Dados apagados.');
+});
+
+/* Service worker (se existir) */
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('./service-worker.js').then(()=> console.log('SW registrado')).catch(e=>console.warn('SW erro', e));
 }
 
 /* init */
 (function init(){
-  cadastros = cadastros.map(c => ({ entradas: [], saidas: [], status: 'fora', ...c }));
+  cadastros = cadastros.map(c => ({ entradas: c.entradas || [], saidas: c.saidas || [], status: c.status || 'fora', createdAt: c.createdAt || nowISO(), ...c }));
   renderHistorico();
   renderMarketingList();
   attachPrintFilterEvents();
@@ -623,16 +691,6 @@ function toDateOnly(iso){
   const d = new Date(iso);
   if (isNaN(d.getTime())) return null;
   return d.toISOString().slice(0,10); // yyyy-mm-dd
-}
-
-function agruparPorDia(list){
-  const map = {};
-  list.forEach(c => {
-    const dia = toDateOnly(c.createdAt) || toDateOnly(c.entradas && c.entradas[0] && c.entradas[0].ts) || 'unknown';
-    map[dia] = map[dia] || [];
-    map[dia].push(c);
-  });
-  return map;
 }
 
 function filtrarPorPeriodo(from, to){
@@ -744,6 +802,53 @@ function attachPrintFilterEvents(){
     w.document.close();
     setTimeout(()=> w.print(), 500);
   });
+
+  // botão voltar impressão (já injetado no HTML)
+  if (btnVoltarImpressao) btnVoltarImpressao.addEventListener('click', () => window.history.back());
 }
+
+/* ---------- FUNÇÕES DE EDIÇÃO (nova) ---------- */
+
+/**
+ * abrirEdicao(id)
+ * Preenche o formulário com os dados do cadastro e ativa o modo 'edição'.
+ * Quando o usuário salvar o formulário (submit), o registro será atualizado em vez de criado.
+ */
+function abrirEdicao(id){
+  const c = cadastros.find(x => x.id === id);
+  if (!c) { alert('Cadastro não encontrado para edição'); return; }
+
+  idEmEdicao = id;
+
+  // preencher o formulário com os campos existentes (se existirem)
+  try {
+    if (form.elements['nome']) form.elements['nome'].value = c.nome || '';
+    if (form.elements['dataNascimento']) form.elements['dataNascimento'].value = c.dataNascimento || '';
+    if (form.elements['idade']) form.elements['idade'].value = c.idade || '';
+    if (form.elements['responsavel']) form.elements['responsavel'].value = c.responsavel || '';
+    if (form.elements['telefone']) form.elements['telefone'].value = c.telefone || '';
+    if (form.elements['email']) form.elements['email'].value = c.email || '';
+    if (form.elements['setor']) form.elements['setor'].value = c.setor || '';
+    if (form.elements['mesa']) form.elements['mesa'].value = c.mesa || '';
+    if (form.elements['temAlergia']) form.elements['temAlergia'].value = c.temAlergia || 'nao';
+    if (form.elements['qualAlergia']) form.elements['qualAlergia'].value = c.qualAlergia || '';
+    if (form.elements['altura']) form.elements['altura'].value = c.altura || 'menor';
+    if (form.elements['saiSozinho']) form.elements['saiSozinho'].value = c.saiSozinho || 'nao';
+    if (form.elements['observacoes']) form.elements['observacoes'].value = c.observacoes || '';
+  } catch(e){
+    console.warn('Erro ao preencher form para edição', e);
+  }
+
+  alergiaLabel.style.display = (c.temAlergia === 'sim') ? 'block' : 'none';
+  updateLiveBadge();
+
+  // ir para a aba Cadastro
+  document.querySelector("nav button.active")?.classList.remove("active");
+  document.querySelector("nav button[data-tab='cadastro']")?.classList.add("active");
+  document.querySelector(".tab.active")?.classList.remove("active");
+  document.getElementById("cadastro").classList.add("active");
+}
+
+/* ---------- FIM EDIÇÃO ---------- */
 
 /* end of file */
