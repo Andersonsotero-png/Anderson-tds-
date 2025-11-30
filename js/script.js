@@ -1,6 +1,6 @@
 // ================== TROCA DE ABAS ==================
 document.querySelectorAll("nav button").forEach(btn => {
-  btn.onclick = e => {
+  btn.onclick = () => {
     document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
     document.getElementById(btn.dataset.tab).classList.add("active");
 
@@ -9,14 +9,12 @@ document.querySelectorAll("nav button").forEach(btn => {
   };
 });
 
-// Exibir categorias da meia
-document.getElementById("tpIngresso").onchange = () => {
-  let tipo = document.getElementById("tpIngresso").value;
-  document.getElementById("boxMeia").style.display = 
-      tipo === "meia" ? "block" : "none";
+// ================== MOSTRAR CATEGORIA MEIA ==================
+tpIngresso.onchange = () => {
+  boxMeia.style.display = tpIngresso.value === "meia" ? "block" : "none";
 };
 
-// Valores
+// ================== VALORES ==================
 const VALORES = {
   inteira: 35.90,
   meia: 17.95,
@@ -24,7 +22,7 @@ const VALORES = {
 };
 
 // ================== CADASTRO ==================
-document.getElementById("btnCadastrar").onclick = () => {
+btnCadastrar.onclick = () => {
   let nome = nomeCrianca.value.trim();
   let resp = responsavel.value.trim();
   let cont = contato.value.trim();
@@ -34,7 +32,7 @@ document.getElementById("btnCadastrar").onclick = () => {
   let categoriaMeia = tipoIngresso === "meia" ? catMeia.value : "";
 
   if(!nome || !cont){
-    alert("Preencha nome e contato.");
+    alert("Preencha nome e contato!");
     return;
   }
 
@@ -55,11 +53,10 @@ document.getElementById("btnCadastrar").onclick = () => {
 
 // ================== QR CODE ==================
 function gerarQRCode(dados){
-  let box = document.getElementById("qrCodeCadastro");
-  box.innerHTML = "";
+  qrCodeCadastro.innerHTML = "";
 
   QRCode.toCanvas(JSON.stringify(dados), {width:220}, (err, canvas)=>{
-    box.appendChild(canvas);
+    qrCodeCadastro.appendChild(canvas);
   });
 }
 
@@ -73,19 +70,19 @@ function salvarHistorico(obj){
 
 function carregarHistorico(){
   let banco = JSON.parse(localStorage.getItem("historico")||"[]");
-  let cont = document.getElementById("listaHistoricoContainer");
-  cont.innerHTML = "";
+  listaHistoricoContainer.innerHTML = "";
 
   banco.forEach(item=>{
     let div = document.createElement("div");
     div.className = "card";
     div.innerHTML = `
       <b>${item.nome}</b><br>
-      ${item.contato}<br>
-      Ingresso: ${item.ingresso} - R$ ${item.valor.toFixed(2)}<br>
+      Contato: ${item.contato}<br>
+      Ingresso: ${item.ingresso} ${item.categoria ? "("+item.categoria+")" : ""}<br>
+      Valor: R$ ${item.valor.toFixed(2)}<br>
       <i>${item.criado}</i>
     `;
-    cont.appendChild(div);
+    listaHistoricoContainer.appendChild(div);
   });
 }
 carregarHistorico();
@@ -102,7 +99,8 @@ function buscarCadastro(){
     .forEach(c => {
       listaBusca.innerHTML += `
         <li><div class="card">
-          <b>${c.nome}</b><br>${c.contato}
+          <b>${c.nome}</b><br>
+          Contato: ${c.contato}
         </div></li>`;
     });
 }
@@ -119,10 +117,10 @@ function exportarExcel(){
 }
 
 // ================== RELATÓRIO IMPRESSÃO ==================
-document.getElementById("btnImprimirFiltro").onclick = () => {
+btnImprimirFiltro.onclick = () => {
   let banco = JSON.parse(localStorage.getItem("historico")||"[]");
-
   let hoje = new Date().toLocaleDateString();
+
   let doDia = banco.filter(r => r.criado.includes(hoje));
 
   let totInteira = doDia.filter(r=>r.ingresso==="inteira").length;
@@ -132,16 +130,16 @@ document.getElementById("btnImprimirFiltro").onclick = () => {
   let valorTotal = doDia.reduce((s,r)=>s+r.valor,0);
 
   relatorioPreview.innerHTML = `
-    <h3>Relatório do dia</h3>
-    <b>Inteira:</b> ${totInteira} crianças<br>
-    <b>Meia:</b> ${totMeia} crianças<br>
-    <b>Cortesia:</b> ${totCortesia} crianças<br>
+    <h3>Relatório do dia (${hoje})</h3>
+    Inteira: ${totInteira}<br>
+    Meia: ${totMeia}<br>
+    Cortesia: ${totCortesia}<br>
     <hr>
     <b>Total arrecadado:</b> R$ ${valorTotal.toFixed(2)}
   `;
 };
 
-// botão VOLTAR funcionando
-document.getElementById("btnVoltarImpressao").onclick = () => {
+// ===== BOTÃO VOLTAR =====
+btnVoltarImpressao.onclick = () => {
   document.querySelector("[data-tab='cadastro']").click();
 };
