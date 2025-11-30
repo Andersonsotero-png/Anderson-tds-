@@ -1,4 +1,6 @@
-// ================== TROCA DE ABAS ==================
+// ============================
+// TROCA DE ABAS
+// ============================
 document.querySelectorAll("nav button").forEach(btn => {
   btn.onclick = () => {
     document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
@@ -9,41 +11,78 @@ document.querySelectorAll("nav button").forEach(btn => {
   };
 });
 
-// ================== MOSTRAR CATEGORIA MEIA ==================
-tpIngresso.onchange = () => {
-  boxMeia.style.display = tpIngresso.value === "meia" ? "block" : "none";
-};
 
-// ================== VALORES ==================
+// ============================
+// INGRESSO: valores + categorias de meia
+// ============================
 const VALORES = {
   inteira: 35.90,
   meia: 17.95,
   cortesia: 0
 };
 
-// ================== CADASTRO ==================
-btnCadastrar.onclick = () => {
-  let nome = nomeCrianca.value.trim();
-  let resp = responsavel.value.trim();
-  let cont = contato.value.trim();
-  let obs  = obs.value.trim();
+// cria o bloco da MEIA no topo do formulário
+(function adicionarCamposMeia() {
+  const form = document.querySelector("#formCadastro");
 
-  let tipoIngresso = tpIngresso.value;
-  let categoriaMeia = tipoIngresso === "meia" ? catMeia.value : "";
+  const bloco = document.createElement("div");
+  bloco.innerHTML = `
+    <label>Tipo de ingresso:
+      <select name="tpIngresso" id="tpIngresso">
+        <option value="inteira">Inteira — R$ 35,90</option>
+        <option value="meia">Meia — R$ 17,95</option>
+        <option value="cortesia">Cortesia — R$ 0,00</option>
+      </select>
+    </label>
 
-  if(!nome || !cont){
-    alert("Preencha nome e contato!");
-    return;
-  }
+    <label id="boxMeia" style="display:none">
+      Categoria da meia:
+      <select id="catMeia">
+        <option value="pcd">PCD</option>
+        <option value="tea">TEA</option>
+        <option value="down">Down</option>
+      </select>
+    </label>
+  `;
+  
+  form.prepend(bloco);
+})();
 
-  let registro = {
-    nome,
-    responsavel: resp,
-    contato: cont,
-    observacoes: obs,
-    ingresso: tipoIngresso,
-    categoria: categoriaMeia,
-    valor: VALORES[tipoIngresso],
+document.getElementById("tpIngresso").onchange = () => {
+  document.getElementById("boxMeia").style.display =
+    tpIngresso.value === "meia" ? "block" : "none";
+};
+
+
+// ============================
+// CADASTRAR
+// ============================
+document.getElementById("formCadastro").onsubmit = (e) => {
+  e.preventDefault();
+
+  const fd = new FormData(e.target);
+
+  const ingresso = fd.get("tpIngresso");
+  const categoriaMeia = ingresso === "meia" ? document.getElementById("catMeia").value : "";
+
+  const registro = {
+    nome: fd.get("nome"),
+    dataNascimento: fd.get("dataNascimento"),
+    idade: fd.get("idade"),
+    responsavel: fd.get("responsavel"),
+    telefone: fd.get("telefone"),
+    email: fd.get("email"),
+    setor: fd.get("setor"),
+    mesa: fd.get("mesa"),
+    temAlergia: fd.get("temAlergia"),
+    qualAlergia: fd.get("qualAlergia"),
+    altura: fd.get("altura"),
+    saiSozinho: fd.get("saiSozinho"),
+    observacoes: fd.get("observacoes"),
+
+    ingresso,
+    categoriaMeia,
+    valor: VALORES[ingresso],
     criado: new Date().toLocaleString()
   };
 
@@ -51,16 +90,23 @@ btnCadastrar.onclick = () => {
   gerarQRCode(registro);
 };
 
-// ================== QR CODE ==================
+
+// ============================
+// QR CODE
+// ============================
 function gerarQRCode(dados){
-  qrCodeCadastro.innerHTML = "";
+  let box = document.getElementById("qrCodeCadastro");
+  box.innerHTML = "";
 
   QRCode.toCanvas(JSON.stringify(dados), {width:220}, (err, canvas)=>{
-    qrCodeCadastro.appendChild(canvas);
+    box.appendChild(canvas);
   });
 }
 
-// ================== HISTÓRICO ==================
+
+// ============================
+// HISTÓRICO
+// ============================
 function salvarHistorico(obj){
   let banco = JSON.parse(localStorage.getItem("historico")||"[]");
   banco.push(obj);
@@ -70,24 +116,27 @@ function salvarHistorico(obj){
 
 function carregarHistorico(){
   let banco = JSON.parse(localStorage.getItem("historico")||"[]");
-  listaHistoricoContainer.innerHTML = "";
+  let cont = document.getElementById("listaHistoricoContainer");
+  cont.innerHTML = "";
 
   banco.forEach(item=>{
     let div = document.createElement("div");
     div.className = "card";
     div.innerHTML = `
       <b>${item.nome}</b><br>
-      Contato: ${item.contato}<br>
-      Ingresso: ${item.ingresso} ${item.categoria ? "("+item.categoria+")" : ""}<br>
-      Valor: R$ ${item.valor.toFixed(2)}<br>
+      ${item.telefone}<br>
+      Ingresso: ${item.ingresso}${item.categoriaMeia ? " ("+item.categoriaMeia+")" : ""} — R$ ${item.valor.toFixed(2)}<br>
       <i>${item.criado}</i>
     `;
-    listaHistoricoContainer.appendChild(div);
+    cont.appendChild(div);
   });
 }
 carregarHistorico();
 
-// ================== BUSCA ==================
+
+// ============================
+// BUSCA
+// ============================
 function buscarCadastro(){
   let termo = inputBusca.value.toLowerCase();
   let banco = JSON.parse(localStorage.getItem("historico")||"[]");
@@ -95,18 +144,25 @@ function buscarCadastro(){
   listaBusca.innerHTML = "";
 
   banco
-    .filter(c => c.nome.toLowerCase().includes(termo))
+    .filter(c =>
+      c.nome.toLowerCase().includes(termo) ||
+      c.telefone.toLowerCase().includes(termo) ||
+      c.mesa.toLowerCase().includes(termo)
+    )
     .forEach(c => {
       listaBusca.innerHTML += `
         <li><div class="card">
-          <b>${c.nome}</b><br>
-          Contato: ${c.contato}
+          <b>${c.nome}</b><br>${c.telefone}
         </div></li>`;
     });
 }
+inputBusca.oninput = buscarCadastro;
 
-// ================== EXPORTAR EXCEL ==================
-function exportarExcel(){
+
+// ============================
+// EXPORTAR EXCEL
+// ============================
+document.getElementById("btnExportJSON").onclick = () => {
   let banco = JSON.parse(localStorage.getItem("historico")||"[]");
 
   let wb = XLSX.utils.book_new();
@@ -114,32 +170,38 @@ function exportarExcel(){
 
   XLSX.utils.book_append_sheet(wb, ws, "Relatorio");
   XLSX.writeFile(wb, "relatorio_parquinho.xlsx");
-}
+};
 
-// ================== RELATÓRIO IMPRESSÃO ==================
-btnImprimirFiltro.onclick = () => {
+
+// ============================
+// RELATÓRIO IMPRESSÃO
+// ============================
+document.getElementById("btnImprimirFiltro").onclick = () => {
   let banco = JSON.parse(localStorage.getItem("historico")||"[]");
-  let hoje = new Date().toLocaleDateString();
 
+  let hoje = new Date().toLocaleDateString();
   let doDia = banco.filter(r => r.criado.includes(hoje));
 
   let totInteira = doDia.filter(r=>r.ingresso==="inteira").length;
   let totMeia    = doDia.filter(r=>r.ingresso==="meia").length;
   let totCortesia= doDia.filter(r=>r.ingresso==="cortesia").length;
 
-  let valorTotal = doDia.reduce((s,r)=>s+r.valor,0);
+  let totalBruto = doDia.reduce((s,r)=>s+r.valor,0);
 
   relatorioPreview.innerHTML = `
-    <h3>Relatório do dia (${hoje})</h3>
-    Inteira: ${totInteira}<br>
-    Meia: ${totMeia}<br>
-    Cortesia: ${totCortesia}<br>
+    <h3>Relatório do dia</h3>
+    <b>Inteira:</b> ${totInteira} crianças<br>
+    <b>Meia:</b> ${totMeia} crianças<br>
+    <b>Cortesia:</b> ${totCortesia} crianças<br>
     <hr>
-    <b>Total arrecadado:</b> R$ ${valorTotal.toFixed(2)}
+    <b>Total Bruto:</b> R$ ${totalBruto.toFixed(2)}
   `;
 };
 
-// ===== BOTÃO VOLTAR =====
-btnVoltarImpressao.onclick = () => {
-  document.querySelector("[data-tab='cadastro']").click();
+
+// ============================
+// BOTÃO VOLTAR
+// ============================
+document.getElementById("btnVoltarImpressao").onclick = () => {
+  document.querySelector("button[data-tab='cadastro']").click();
 };
