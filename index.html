@@ -5,9 +5,12 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Parquinho App - Terra do Sol</title>
 
+  <!-- Manifest apontando para os ícones corrigidos -->
   <link rel="manifest" href="manifest.json" />
+
   <link rel="stylesheet" href="css/style.css" />
 
+  <!-- Bibliotecas: QRCode, jsQR e SheetJS (XLSX) -->
   <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jsqr/dist/jsQR.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -15,10 +18,10 @@
 <body>
   <header>
     <div class="brand">
+      <!-- OPÇÃO A: usar icon-512 como logo -->
       <img alt="logo" id="appLogo" src="assets/icons/icon-512.png" />
       <h1 id="appTitle">Parquinho App - Terra do Sol</h1>
     </div>
-
     <nav>
       <button data-tab="cadastro" class="active">Cadastro</button>
       <button data-tab="busca">Busca</button>
@@ -32,25 +35,14 @@
     <!-- CADASTRO -->
     <section id="cadastro" class="tab active">
       <form id="formCadastro" autocomplete="off">
-
-        <!-- ================= INGRESSO ADICIONADO ================== -->
-        <label>Tipo de ingresso:
-          <select name="ingresso" id="tpIngresso">
-            <option value="inteira">Inteira – R$ 35,90</option>
-            <option value="meia">Meia – R$ 17,95</option>
-            <option value="cortesia">Cortesia – R$ 0</option>
+        <!-- NOVO: Tipo de Pulseira (no topo) -->
+        <label>Tipo de pulseira:
+          <select name="tipoPulseira" id="tipoPulseira" required>
+            <option value="inteira">Inteira — R$ 35,90</option>
+            <option value="meia">Meia — R$ 17,95</option>
+            <option value="cortesia">Cortesia — R$ 0,00</option>
           </select>
         </label>
-
-        <label id="boxMeia" style="display:none">
-          Categoria da meia:
-          <select id="catMeia">
-            <option value="PCD">PCD</option>
-            <option value="TEA">TEA</option>
-            <option value="Down">Down</option>
-          </select>
-        </label>
-        <!-- ========================================================== -->
 
         <label>Nome completo (criança):
           <input type="text" name="nome" required />
@@ -144,6 +136,7 @@
         <div class="row">
           <button id="btnStartCamera">Abrir câmera</button>
           <button id="btnStopCamera" disabled>Fechar câmera</button>
+          <!-- RESTAUREI O NOME ANTIGO -->
           <button id="btnScanNow" disabled>Registrar Entrada/Saída</button>
           <button id="btnRegistrarManual">Registrar Manual</button>
         </div>
@@ -167,6 +160,7 @@
       <h2>Histórico de Cadastros e Movimentações</h2>
       <div id="listaHistoricoContainer"></div>
       <div class="row">
+        <!-- mantive o id btnExportJSON para compatibilidade, mas agora ele gera EXCEL -->
         <button id="btnExportJSON">Exportar Excel</button>
         <button id="btnLimparTudo">Limpar tudo</button>
       </div>
@@ -221,8 +215,7 @@
 
           <button id="btnFiltrar">Filtrar</button>
           <button id="btnImprimirFiltro">Imprimir</button>
-
-          <!-- VOLTAR FUNCIONANDO -->
+          <!-- Botão voltar que retorna para a aba Cadastro -->
           <button id="btnVoltarImpressao" type="button" style="background:#555">Voltar</button>
         </div>
       </div>
