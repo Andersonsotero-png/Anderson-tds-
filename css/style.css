@@ -9,21 +9,29 @@
   --green:#2ecc71;
   --red:#e74c3c;
   --yellow:#f1c40f;
+  --shadow: 0 8px 24px rgba(2,6,23,0.06);
+  --btn-gap:8px;
+  --small-btn-radius:6px;
 }
 
+/* Reset / base */
 *{box-sizing:border-box}
+html,body{height:100%}
 body{
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial;
   margin:0;
   background:var(--bg);
   color:#222;
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
 }
 
-/* HEADER */
+/* Top */
 header{
   background:linear-gradient(90deg,var(--teal-light) 0%,var(--orange-strong) 100%);
   color:var(--white);
   padding:12px 16px;
+  box-shadow: var(--shadow);
 }
 .brand{
   display:flex;
@@ -32,229 +40,154 @@ header{
   justify-content:center;
 }
 .brand img{
-  width:44px;
-  height:44px;
-  border-radius:8px;
+  width:56px;
+  height:56px;
+  border-radius:10px;
   background:var(--white);
-  padding:4px;
+  padding:6px;
+  object-fit:contain;
+  box-shadow:0 6px 18px rgba(0,0,0,0.08);
 }
-header h1{
-  margin:0;
-  font-size:1.25rem;
-  font-weight:700;
-}
+header h1{margin:0;font-size:1.15rem;font-weight:800;letter-spacing:0.2px}
 nav{
   display:flex;
   justify-content:center;
-  gap:8px;
+  gap:10px;
   margin-top:10px;
+  flex-wrap:wrap;
 }
 nav button{
   background:transparent;
   color:rgba(255,255,255,0.95);
   border:2px solid rgba(255,255,255,0.12);
   padding:8px 12px;
-  border-radius:7px;
-  font-weight:600;
+  border-radius:10px;
+  font-weight:700;
   cursor:pointer;
 }
-nav button.active{
-  background:rgba(255,255,255,0.18);
-  box-shadow:0 2px 6px rgba(0,0,0,0.08);
-}
+nav button.active{background:rgba(255,255,255,0.12);box-shadow:0 4px 12px rgba(0,0,0,0.08)}
 
-/* MAIN */
-main{
-  max-width:980px;
-  margin:18px auto;
-  padding:12px;
-}
+/* Layout */
+main{max-width:1000px;margin:18px auto;padding:12px}
 .tab{display:none}
 .tab.active{display:block}
-
-/* FORM + INPUTS */
-form label{
-  display:block;
-  margin:10px 0;
-  font-weight:600;
-}
-
-form input,
-form textarea,
-form select{
-  width:100%;
-  padding:10px;
-  border-radius:8px;
-  border:1px solid #e6e6e6;
-  background:#fff;
-  margin-top:6px;
-}
-
-textarea{min-height:80px;resize:vertical}
-
-.row{
-  display:flex;
-  flex-wrap:wrap;
-  gap:12px;
-  margin-top:12px;
-}
-
-/* BOTÕES */
-button{
-  background:var(--orange-strong);
-  color:var(--white);
-  border:none;
-  padding:10px 14px;
-  border-radius:7px;
-  cursor:pointer;
-  font-weight:700;
-  font-size:14px;
-}
-
-/* Botões com mais "respiro" igual na sua foto */
-.row button{
-  margin-right:6px;
-  margin-bottom:10px;
-}
-
-/* Botão cinza (Voltar) */
-button.back{
-  background:#555 !important;
-  color:white !important;
-}
-
-/* Card */
 .card{
   background:var(--card);
   border-radius:var(--radius);
   padding:12px;
   border:1px solid #eee;
-  margin-bottom:14px;
+  margin-bottom:12px;
+  box-shadow: 0 6px 18px rgba(2,6,23,0.03);
 }
 
-/* QR + CÂMERA */
-#qrCodeCadastro{
-  margin-top:12px;
-  display:flex;
-  gap:12px;
-  flex-wrap:wrap;
+/* Forms */
+form label{display:block;margin:8px 0;font-weight:700;color:#1b2b34}
+form input, form textarea, form select{
+  width:100%;padding:10px;border-radius:8px;border:1px solid #e6e6e6;background:#fff;margin-top:6px;font-size:15px
 }
+textarea{min-height:90px;resize:vertical}
 
-#videoWrap{
-  max-width:420px;
-  margin-top:12px;
-  border-radius:8px;
-  overflow:hidden;
+/* Rows & buttons */
+.row{display:flex;gap:var(--btn-gap);margin-top:12px;flex-wrap:wrap;align-items:center}
+.row > * { margin-bottom:6px; }
+button{
+  background:var(--orange-strong);
+  color:var(--white);
+  border:none;
+  padding:10px 12px;
+  border-radius:10px;
+  cursor:pointer;
+  font-weight:800;
+  letter-spacing:0.2px;
+  box-shadow:0 6px 18px rgba(0,0,0,0.06);
 }
-#video{
-  width:100%;
-  background:#000;
-}
+button.secondary{background:var(--teal-light)}
+button[disabled]{opacity:.5;cursor:not-allowed}
 
-/* BUSCA */
-#inputBusca{
-  padding:10px;
-  border-radius:8px;
-  border:1px solid #ddd;
-  width:100%;
-  margin-bottom:8px;
-}
-#listaBusca li{
-  list-style:none;
-  margin-bottom:8px;
-}
-
-/* HISTÓRICO – Botões menores e com mais espaçamento */
-#listaHistoricoContainer .card{
-  margin-bottom:10px;
-}
-.hist-btn{
-  border-radius:6px !important;
-  padding:8px 10px !important;
-  margin-right:8px !important;
-  margin-top:8px !important;
-}
-
-/* MARKETING – botões mais espaçados */
-#marketingList .contact-row{
-  display:flex;
-  align-items:center;
-  gap:10px;
-  padding:8px;
-  border-bottom:1px solid #f0f0f0;
-}
-.contact-actions button{
-  margin-left:6px;
-}
-
-/* BADGES */
-.badge{
-  display:inline-block;
-  padding:6px 10px;
-  border-radius:6px;
-  color:#fff;
+/* Small/compact buttons (history area) */
+.small-btn{
+  border-radius:var(--small-btn-radius);
+  padding:6px 8px;
   font-weight:700;
+  font-size:13px;
+  margin-left:0;
+  display:inline-block;
 }
+.card .row button.small-btn{ margin-right:6px; }
+
+/* QR / video */
+#qrCodeCadastro{margin-top:12px;display:flex;gap:8px;flex-wrap:wrap}
+#videoWrap{max-width:520px;margin-top:12px;border-radius:8px;overflow:hidden;border:1px solid #e9f2fb;background:#000}
+#video{width:100%;height:auto;background:#000;display:block}
+
+/* Busca & list */
+#inputBusca{padding:10px;border-radius:8px;border:1px solid #ddd;width:100%;margin-bottom:8px}
+#listaBusca{padding:0;margin:0;list-style:none}
+#listaBusca li{margin-bottom:8px}
+
+/* Histórico */
+#listaHistoricoContainer .card{margin-bottom:10px;display:block}
+.history-controls{display:flex;gap:8px;flex-wrap:wrap}
+
+/* Marketing list */
+#marketingList .contact-row{display:flex;align-items:center;gap:10px;padding:8px;border-bottom:1px solid #f0f0f0}
+.contact-meta{flex:1}
+.contact-actions button{margin-left:6px;padding:6px 8px;border-radius:6px;font-weight:700}
+
+/* Badges */
+.badge{display:inline-block;padding:6px 10px;border-radius:8px;color:#fff;font-weight:800;font-size:12px}
 .badge.green{background:var(--green)}
 .badge.red{background:var(--red)}
-.badge.yellow{
-  background:var(--yellow);
-  color:#333;
-}
+.badge.yellow{background:var(--yellow);color:#333}
 
-/* Impressão */
+/* Buttons spacing styled like your reference image */
+.card .row{gap:10px}
+.card .row button{min-width:120px}
+
+/* Print-specific and report */
 @media print {
-  body * { visibility:hidden; }
-  #relatorioPrint, #relatorioPrint * { visibility:visible; }
-  #relatorioPrint{
-    position:absolute;
-    left:0;
-    top:0;
-    width:100%;
-  }
+  body * { visibility: hidden; }
+  #relatorioPrint, #relatorioPrint * { visibility: visible; }
+  #relatorioPrint { position: absolute; left: 0; top: 0; width: 100%; }
 }
 
-/* Relatórios */
+/* Report preview / watermark */
 .report-wrapper{
-  position:relative;
-  padding:18px;
-  min-height:200px;
+  position: relative;
+  padding: 18px;
+  min-height: 200px;
 }
 .report-watermark{
-  position:absolute;
-  left:50%;
-  top:50%;
-  transform:translate(-50%,-50%);
-  opacity:0.08;
-  pointer-events:none;
-  width:60%;
-  max-width:500px;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%,-50%);
+  opacity: 0.06;
+  pointer-events: none;
+  width: 60%;
+  max-width: 480px;
 }
-.report-header{
-  display:flex;
-  align-items:center;
-  gap:12px;
+.report-header{display:flex;align-items:center;gap:12px}
+.report-header img{width:80px;height:auto}
+.report-title{font-size:1.1rem;font-weight:800}
+.report-meta{margin-top:6px;color:var(--muted)}
+.report-table{width:100%;border-collapse:collapse;margin-top:12px}
+.report-table th, .report-table td{border:1px solid #ddd;padding:8px;text-align:left;font-size:13px}
+
+/* Impressão: btn voltar visível e alinhado */
+#btnVoltarImpressao{
+  background:#555 !important;
+  min-width:100px;
+  box-shadow:none;
 }
-.report-header img{
-  width:80px;
-  height:auto;
+
+/* Responsivo */
+@media (max-width:900px){
+  main{padding:14px}
+  nav{gap:8px}
+  .brand img{width:48px;height:48px}
+  .card .row button{min-width:unset}
 }
-.report-title{
-  font-size:1.1rem;
-  font-weight:700;
-}
-.report-meta{
-  margin-top:6px;
-  color:var(--muted);
-}
-.report-table{
-  width:100%;
-  border-collapse:collapse;
-  margin-top:12px;
-}
-.report-table th,
-.report-table td{
-  border:1px solid #ddd;
-  padding:8px;
-  font-size:13px;
-}
+
+/* Accessibility helpers */
+button:focus, input:focus, select:focus, textarea:focus{outline:3px solid rgba(14,165,255,0.18);outline-offset:2px}
