@@ -1,4 +1,4 @@
-// script.js — Versão final solicitada (corrigida conforme HTML enviado)
+// script.js — Versão final solicitada (com as alterações pedidas)
 
 // utilitários
 const $ = s => document.querySelector(s);
@@ -6,6 +6,11 @@ const $$ = s => Array.from(document.querySelectorAll(s));
 const nowISO = () => new Date().toISOString();
 const uid = () => Date.now().toString();
 function escapeHtml(s){ return (s||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// constantes de preço
+const PRICE_INTEIRA = 35.90;
+const PRICE_MEIA = 17.95;
+const PRICE_CORTESIA = 0;
 
 // estado
 let cadastros = JSON.parse(localStorage.getItem('cadastros') || '[]');
@@ -47,6 +52,9 @@ const btnClearAll = $('#btnClearAll');
 const btnSendToSelected = $('#btnSendToSelected');
 const marketingMessage = $('#marketingMessage');
 const marketingImage = $('#marketingImage');
+const tipoIngressoSel = $('#tipoIngresso');
+const meiaMotivoWrapper = $('#meiaMotivoWrapper');
+const meiaMotivoSel = $('#meiaMotivo');
 
 /* Impressão refs */
 const quickFilter = $('#quickFilter');
@@ -55,11 +63,10 @@ const filterTo = $('#filterTo');
 const btnFiltrar = $('#btnFiltrar');
 const btnImprimirFiltro = $('#btnImprimirFiltro');
 const relatorioPreview = $('#relatorioPreview');
+const faturamentoResumo = $('#faturamentoResumo');
 const btnVoltarImpressao = $('#btnVoltarImpressao');
 const impressaoObservacoes = $('#impressaoObservacoes');
-const faturamentoResumo = $('#faturamentoResumo');
 
-/* Histórico filter refs */
 const histFrom = $('#histFrom');
 const histTo = $('#histTo');
 const btnFilterHistorico = $('#btnFilterHistorico');
@@ -90,6 +97,14 @@ function calcularIdade(dob){
   const m = hoje.getMonth() - dob.getMonth();
   if (m < 0 || (m === 0 && hoje.getDate() < dob.getDate())) idade--;
   return idade;
+}
+
+/* meia motivo toggle */
+if (tipoIngressoSel) {
+  tipoIngressoSel.addEventListener('change', () => {
+    if (tipoIngressoSel.value === 'meia') meiaMotivoWrapper.style.display = 'block';
+    else { meiaMotivoWrapper.style.display = 'none'; meiaMotivoSel.value = ''; }
+  });
 }
 
 /* alergia toggle */
@@ -129,7 +144,8 @@ if (form) {
     e.preventDefault();
 
     // coletar dados do form
-    const tipoIngresso = (form.elements['tipoIngresso'] && form.elements['tipoIngresso'].value) || 'inteira';
+    const tipoIngresso = (form.elements['tipoIngresso'].value || 'inteira');
+    const meiaMotivo = (form.elements['meiaMotivo'] && form.elements['meiaMotivo'].value) || '';
     const nome = (form.elements['nome'].value || '').trim();
     const dataNascimento = form.elements['dataNascimento'].value;
     const idade = form.elements['idade'].value || calcularIdade(new Date(dataNascimento));
@@ -153,7 +169,7 @@ if (form) {
       const atual = cadastros[idx];
       cadastros[idx] = {
         ...atual,
-        tipoIngresso, nome, dataNascimento, idade, responsavel, telefone, email,
+        tipoIngresso, meiaMotivo, nome, dataNascimento, idade, responsavel, telefone, email,
         setor, mesa, temAlergia, qualAlergia, altura, saiSozinho, observacoes
       };
       saveCadastros();
@@ -162,6 +178,7 @@ if (form) {
       form.reset();
       if (idadeInput) idadeInput.value = '';
       alergiaLabel.style.display = 'none';
+      meiaMotivoWrapper.style.display = 'none';
       updateLiveBadge();
       renderHistorico();
       renderMarketingList();
@@ -180,6 +197,7 @@ if (form) {
     const novo = {
       id: uid(),
       tipoIngresso,
+      meiaMotivo,
       nome,
       dataNascimento,
       idade,
@@ -205,6 +223,7 @@ if (form) {
     form.reset();
     if (idadeInput) idadeInput.value = '';
     alergiaLabel.style.display = 'none';
+    meiaMotivoWrapper.style.display = 'none';
     updateLiveBadge();
     renderHistorico();
     renderMarketingList();
@@ -302,8 +321,9 @@ if (btnGerarTodosQR) btnGerarTodosQR.addEventListener('click', () => {
 });
 
 /* busca (adicionada opção de Alterar Cadastro) */
+/* NOTA: busca agora consulta nome, telefone, email, mesa, id; sem zoom/focus automático */
 if (inputBusca) inputBusca.addEventListener('input', () => {
-  const termo = (inputBusca.value || '').toLowerCase().trim();
+  const termo = inputBusca.value.toLowerCase().trim();
   if (!listaBusca) return;
   listaBusca.innerHTML = '';
   if (!termo) return;
@@ -316,16 +336,17 @@ if (inputBusca) inputBusca.addEventListener('input', () => {
   );
   results.forEach(c => {
     const li = document.createElement('li'); li.className = 'card';
+    const tipoLabel = (c.tipoIngresso === 'inteira') ? 'Inteira' : (c.tipoIngresso === 'meia' ? `Meia (${c.meiaMotivo||'-'})` : 'Cortesia');
     const badgeHTML = `<span class="badge ${getBadgeClass(c)}">${getBadgeText(c)}</span>`;
     li.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center">
       <div><strong>${escapeHtml(c.nome)}</strong> <small>(${escapeHtml(c.idade)} anos)</small><br>
         <small>Setor: ${escapeHtml(c.setor||'-')} • Mesa: ${escapeHtml(c.mesa||'-')}</small><br>
-        <small>Alergia: ${(c.temAlergia==='sim')? (escapeHtml(c.qualAlergia) || 'Sim') : 'Não'}</small>
+        <small>Tipo: <strong>${tipoLabel}</strong></small>
         <div>Tel: ${escapeHtml(c.telefone||'-')} • Status: ${(c.status==='dentro')? 'No parque' : 'Fora do parque'}</div>
       </div>
       <div style="text-align:right">
         ${badgeHTML}<br>
-        <button data-id="${c.id}" class="btnRegistrar">Entrada / Saída</button><br>
+        <button data-id="${c.id}" class="btnRegistrar">Entrada/Saída</button><br>
         <button data-id="${c.id}" class="btnPrintSmall">Imprimir etiqueta</button><br>
         <button data-id="${c.id}" class="btnAlterar">Alterar Cadastro</button>
       </div>
@@ -344,25 +365,19 @@ if (inputBusca) inputBusca.addEventListener('input', () => {
 });
 
 /* histórico */
-function renderHistorico(filterFrom=null, filterTo=null){
+function renderHistorico(filteredList = null){
   if(!listaHistoricoContainer) return;
   listaHistoricoContainer.innerHTML = '';
-  let list = cadastros.slice();
-  if (filterFrom) {
-    const start = new Date(filterFrom + "T00:00:00");
-    list = list.filter(c => new Date(c.createdAt) >= start);
-  }
-  if (filterTo) {
-    const end = new Date(filterTo + "T23:59:59");
-    list = list.filter(c => new Date(c.createdAt) <= end);
-  }
+  const list = filteredList || cadastros;
   if (!list.length){ listaHistoricoContainer.textContent = 'Nenhum cadastro ainda.'; return; }
   list.forEach(c => {
     const div = document.createElement('div'); div.className='card';
     const entradasList = (c.entradas||[]).map(t => `${new Date(t.ts).toLocaleString()} — ${escapeHtml(t.operator||'')}`).join('<br>') || '-';
     const saidasList = (c.saidas||[]).map(t => `${new Date(t.ts).toLocaleString()} — ${escapeHtml(t.operator||'')}`).join('<br>') || '-';
+    const tipoLabel = (c.tipoIngresso === 'inteira') ? 'Inteira' : (c.tipoIngresso === 'meia' ? `Meia (${c.meiaMotivo||'-'})` : 'Cortesia');
     const badgeHTML = `<span class="badge ${getBadgeClass(c)}">${getBadgeText(c)}</span>`;
     div.innerHTML = `<strong>${escapeHtml(c.nome)}</strong> <small>${escapeHtml(c.idade)} anos</small>
+      <div>Tipo: <strong>${tipoLabel}</strong></div>
       <div>Responsável: ${escapeHtml(c.responsavel||'-')} | Tel: ${escapeHtml(c.telefone||'-')}</div>
       <div>Setor: ${escapeHtml(c.setor || '-')} | Mesa: ${escapeHtml(c.mesa || '-')}</div>
       <div>Alergia: ${(c.temAlergia === 'sim') ? (escapeHtml(c.qualAlergia) || 'Sim') : 'Não'}</div>
@@ -370,11 +385,12 @@ function renderHistorico(filterFrom=null, filterTo=null){
       <div style="margin-top:8px"><strong>Entradas:</strong><br>${entradasList}</div>
       <div style="margin-top:8px"><strong>Saídas:</strong><br>${saidasList}</div>
       <div style="margin-top:8px">
-        <button data-id="${c.id}" class="btnRegistrar">Entrada / Saída</button>
+        <button data-id="${c.id}" class="btnRegistrar">Entrada/Saída</button>
         <button data-id="${c.id}" class="btnImprimirFicha">Imprimir ficha</button>
         <button data-id="${c.id}" class="btnPrintSmall">Imprimir etiqueta</button>
-        <button data-id="${c.id}" class="btnExcluir">Excluir (senha)</button>
         <button data-id="${c.id}" class="btnAlterar">Alterar Cadastro</button>
+        <button data-id="${c.id}" class="btnPrintQR">Imprimir QR</button>
+        <button data-id="${c.id}" class="btnExcluir">Excluir</button>
       </div>`;
     listaHistoricoContainer.appendChild(div);
   });
@@ -388,13 +404,28 @@ function renderHistorico(filterFrom=null, filterTo=null){
     QRCode.toDataURL(String(c.id), { width:200 }).then(url => printLabelForCadastro(c, url, 'small'));
   }));
   $$('.btnAlterar').forEach(b => b.addEventListener('click', ev => abrirEdicao(ev.target.dataset.id)));
+  $$('.btnPrintQR').forEach(b => b.addEventListener('click', ev => {
+    const id = ev.target.dataset.id;
+    const c = cadastros.find(x=>x.id===id);
+    if (!c) return;
+    // abrir nova janela com o QR e botão fechar (voltar)
+    QRCode.toDataURL(String(c.id), { width:300 }).then(url => {
+      const w = window.open('','_blank');
+      const html = `<html><head><meta charset="utf-8"><title>QR ${escapeHtml(c.nome)}</title>
+        <style>body{font-family:Arial;padding:18px;text-align:center}button{padding:8px 12px;margin:8px;border-radius:6px}</style></head><body>
+        <button id="btnVoltar" onclick="window.close()">Voltar ao App</button>
+        <h3>${escapeHtml(c.nome)}</h3><img src="${url}" style="max-width:240px"><div style="margin-top:8px">ID: ${c.id}</div>
+        <script>window.onload=function(){/* nada */}</script>
+        </body></html>`;
+      w.document.write(html); w.document.close();
+    });
+  }));
 }
-renderHistorico();
 
-/* excluir com senha */
+/* excluir — agora pede senha (tds_1992) */
 function excluirCadastro(id){
-  const pwd = prompt('Senha para excluir cadastro:');
-  if (pwd !== 'tds_1992') { alert('Senha incorreta. Exclusão cancelada.'); return; }
+  const senha = prompt('Para excluir o cadastro, insira a senha de autorização:','');
+  if (senha !== 'tds_1992') { alert('Senha incorreta — ação cancelada.'); return; }
   if(!confirm('Excluir cadastro permanentemente?')) return;
   cadastros = cadastros.filter(c => c.id !== id);
   saveCadastros();
@@ -409,7 +440,9 @@ function imprimirFicha(id){
   const w = window.open('', '_blank');
   const html = `<html><head><meta charset="utf-8"><title>Ficha - ${escapeHtml(c.nome)}</title>
       <style>body{font-family:Arial;padding:16px}</style></head><body>
+      <button onclick="window.close()">Voltar ao App</button>
       <h2>${escapeHtml(c.nome)}</h2>
+      <div>Tipo: ${(c.tipoIngresso||'')} ${c.meiaMotivo?('('+c.meiaMotivo+')'):''}</div>
       <div>Idade: ${escapeHtml(c.idade)}</div>
       <div>Nascido em: ${escapeHtml(c.dataNascimento)}</div>
       <div>Setor: ${escapeHtml(c.setor||'-')} | Mesa: ${escapeHtml(c.mesa||'-')}</div>
@@ -512,7 +545,6 @@ btnScanNow && btnScanNow.addEventListener('click', () => {
   const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: "attemptBoth" });
   if (code) {
     scanMessage.textContent = `QR detectado: ${code.data}`;
-    // handle payload
     handleScannedPayload(code.data);
   } else {
     alert('Nenhum QR detectado nesta captura. Ajuste a posição e tente novamente.');
@@ -522,9 +554,7 @@ btnScanNow && btnScanNow.addEventListener('click', () => {
 function handleScannedPayload(payload){
   const c = cadastros.find(x => x.id === String(payload));
   if (!c) { alert('QR não corresponde a nenhum cadastro.'); return; }
-  // If currently outside => register entry
   if (c.status === 'fora' || !c.status) {
-    // entry
     c.entradas = c.entradas || [];
     c.entradas.push({ ts: nowISO(), operator: currentOperator || 'Operador' });
     c.status = 'dentro';
@@ -532,18 +562,13 @@ function handleScannedPayload(payload){
     alert(`Entrada registrada para ${c.nome} — Operador: ${currentOperator}`);
     return;
   }
-  // currently inside => attempt exit
   if (c.saiSozinho !== 'sim') {
-    // pulseira vermelha or yellow (if not allowed) => block and show contact options
     alert(`${c.nome} NÃO está autorizado a sair sozinho. A saída foi bloqueada.`);
-    // show contact options immediately
     contactResponsibleOptions(c);
-    // record blocked attempt
     c.saidas = c.saidas || [];
     c.saidas.push({ ts: nowISO(), operator: currentOperator || 'Operador', blocked: true });
     saveCadastros(); renderHistorico(); renderMarketingList();
   } else {
-    // allowed to exit
     c.saidas = c.saidas || [];
     c.saidas.push({ ts: nowISO(), operator: currentOperator || 'Operador' });
     c.status = 'fora';
@@ -552,19 +577,10 @@ function handleScannedPayload(payload){
   }
 }
 
-/* manual register (botão "Entrada / Saída" manual) */
+/* manual register */
 if (btnRegistrarManual) btnRegistrarManual.addEventListener('click', () => {
-  // Button simply triggers the manual flow. Historically it expected user to type an identifier in busca.
-  // We'll open a prompt for ID (to be consistent) — but preserve historical behavior: ask operator name inside registrarEntradaSaida.
   const termo = inputBusca ? inputBusca.value.trim() : '';
-  if (!termo) {
-    const manualId = prompt('Digite o ID da pulseira (ex: 1623456789123) para registrar manualmente:');
-    if (!manualId) return;
-    const found = cadastros.find(c => c.id === manualId || (c.telefone || '').includes(manualId) || (c.nome||'').toLowerCase().includes(manualId.toLowerCase()));
-    if (!found) { alert('Nenhum cadastro encontrado para: ' + manualId); return; }
-    registrarEntradaSaida(found.id);
-    return;
-  }
+  if (!termo) { alert('Digite nome/telefone/pulseira no campo de busca para registrar manualmente.'); return; }
   const found = cadastros.find(c => (c.nome||'').toLowerCase().includes(termo.toLowerCase()) || (c.telefone||'').includes(termo) || (c.id||'').includes(termo));
   if (!found) { alert('Nenhum cadastro encontrado para: ' + termo); return; }
   registrarEntradaSaida(found.id);
@@ -577,6 +593,7 @@ if (btnImprimir) btnImprimir.addEventListener('click', () => {
   const w = window.open('', '_blank');
   let html = `<html><head><meta charset="utf-8"><title>Cadastros</title>
     <style>body{font-family:Arial;padding:16px} table{width:100%;border-collapse:collapse} th,td{border:1px solid #ddd;padding:8px}</style></head><body>
+    <button onclick="window.close()">Voltar ao App</button>
     <h2>Lista de Cadastros</h2><table><thead><tr><th>Nome</th><th>Idade</th><th>Tel</th><th>Email</th><th>Setor/Mesa</th><th>Status</th></tr></thead><tbody>`;
   cadastros.forEach(c => {
     html += `<tr><td>${escapeHtml(c.nome)}</td><td>${escapeHtml(c.idade)}</td><td>${escapeHtml(c.telefone||'-')}</td><td>${escapeHtml(c.email||'-')}</td>
@@ -667,6 +684,7 @@ if (btnExportJSON) btnExportJSON.addEventListener('click', () => {
   const dataForExport = cadastros.map(c => ({
     id: c.id,
     tipoIngresso: c.tipoIngresso,
+    meiaMotivo: c.meiaMotivo,
     nome: c.nome,
     dataNascimento: c.dataNascimento,
     idade: c.idade,
@@ -739,17 +757,23 @@ function formatDateBr(iso){
   return d.toLocaleDateString();
 }
 
-function buildReportHTML(list, periodLabel){
+function buildReportHTML(list, periodLabel, observacoesText){
   const total = list.length;
-  // group counts by day
-  const byDay = {};
+
+  // contar por tipoIngresso
+  let cntInteira = 0, cntMeia = 0, cntCortesia = 0;
   let bruto = 0;
+  list.forEach(c => {
+    if (c.tipoIngresso === 'inteira') { cntInteira++; bruto += PRICE_INTEIRA; }
+    else if (c.tipoIngresso === 'meia') { cntMeia++; bruto += PRICE_MEIA; }
+    else { cntCortesia++; bruto += PRICE_CORTESIA; }
+  });
+
+  // group counts by day (apenas resumo)
+  const byDay = {};
   list.forEach(c => {
     const day = toDateOnly(c.createdAt) || 'unknown';
     byDay[day] = (byDay[day] || 0) + 1;
-    // faturamento: inteira 35.90, meia 17.95, cortesia 0
-    if (c.tipoIngresso === 'inteira') bruto += 35.90;
-    else if (c.tipoIngresso === 'meia') bruto += 17.95;
   });
   let perDayHtml = '';
   Object.keys(byDay).sort().forEach(day => {
@@ -758,13 +782,17 @@ function buildReportHTML(list, periodLabel){
 
   let html = `<div id="relatorioPrint" class="report-wrapper">
     <img class="report-watermark" src="assets/icons/icon-512.png" alt="marca" />
-    <div class="report-header">
-      <img src="assets/icons/icon-512.png" alt="logo" />
-      <div>
-        <div class="report-title">Relatório – Terra do Sol – Parquinho Infantil</div>
-        <div class="report-meta">Período selecionado: ${periodLabel}</div>
-        <div class="report-meta">Crianças registradas: <strong>${total}</strong></div>
-        <div class="report-meta">Valor bruto do período: <strong>R$ ${bruto.toFixed(2)}</strong></div>
+    <div style="display:flex;gap:12px;justify-content:space-between;align-items:center">
+      <div style="display:flex;gap:12px;align-items:center">
+        <img src="assets/icons/icon-512.png" alt="logo" style="width:70px;height:auto" />
+        <div>
+          <div class="report-title">Relatório – Terra do Sol – Parquinho Infantil</div>
+          <div class="report-meta">Período: ${periodLabel}</div>
+          <div class="report-meta">Crianças registradas: <strong>${total}</strong></div>
+        </div>
+      </div>
+      <div style="text-align:right">
+        <button onclick="window.close()" style="padding:8px 10px;border-radius:6px">Fechar (Voltar)</button>
       </div>
     </div>
 
@@ -776,16 +804,27 @@ function buildReportHTML(list, periodLabel){
 
   list.forEach(c => {
     const pulseira = (c.saiSozinho === 'sim') ? 'VERDE' : (c.altura === 'maior' ? 'AMARELA' : 'VERMELHA');
+    const tipoLabel = (c.tipoIngresso === 'inteira') ? 'Inteira' : (c.tipoIngresso === 'meia' ? `Meia (${c.meiaMotivo||'-'})` : 'Cortesia');
     html += `<tr>
       <td>${escapeHtml(c.nome)}</td>
       <td>${escapeHtml(c.idade)}</td>
       <td>${escapeHtml(c.setor||'-')}</td>
-      <td>${pulseira}</td>
+      <td>${pulseira} • ${tipoLabel}</td>
     </tr>`;
   });
 
-  html += `</tbody></table></div>`;
-  return { html, bruto };
+  html += `</tbody></table>
+
+    <div style="margin-top:12px">
+      <h4>Resumo Financeiro</h4>
+      <div>Entradas inteiras: <strong>${cntInteira}</strong></div>
+      <div>Entradas meias: <strong>${cntMeia}</strong></div>
+      <div>Entradas cortesia: <strong>${cntCortesia}</strong></div>
+      <div style="margin-top:6px">Valor bruto: <strong>R$ ${bruto.toFixed(2)}</strong></div>
+      <div style="margin-top:10px"><strong>Ocorrências / Demandas:</strong><div class="small-muted">${escapeHtml(observacoesText||'-')}</div></div>
+    </div>
+  </div>`;
+  return { html, resumo: { cntInteira, cntMeia, cntCortesia, bruto } };
 }
 
 function attachPrintFilterEvents(){
@@ -817,9 +856,13 @@ function attachPrintFilterEvents(){
     if (!from) return alert('Escolha a data inicial.');
     const list = filtrarPorPeriodo(from, to);
     const periodLabel = (from === to) ? formatDateBr(from) : `${formatDateBr(from)} → ${formatDateBr(to)}`;
-    const res = buildReportHTML(list, periodLabel);
+    const observ = (impressaoObservacoes && impressaoObservacoes.value) || '';
+    const res = buildReportHTML(list, periodLabel, observ);
     relatorioPreview.innerHTML = res.html;
-    faturamentoResumo.innerHTML = `<strong>Valor bruto do período:</strong> R$ ${res.bruto.toFixed(2)}<br><strong>Observações:</strong> ${escapeHtml(impressaoObservacoes.value||'-')}`;
+    // atualizar painel de faturamento resumo
+    faturamentoResumo.innerHTML = `<strong>Resumo:</strong>
+      <div>Inteiras: ${res.resumo.cntInteira} — Meias: ${res.resumo.cntMeia} — Cortesias: ${res.resumo.cntCortesia}</div>
+      <div style="margin-top:6px">Valor bruto: <strong>R$ ${res.resumo.bruto.toFixed(2)}</strong></div>`;
   });
 
   btnImprimirFiltro.addEventListener('click', () => {
@@ -828,17 +871,25 @@ function attachPrintFilterEvents(){
     if (!from) return alert('Escolha a data inicial para imprimir.');
     const list = filtrarPorPeriodo(from, to);
     const periodLabel = (from === to) ? formatDateBr(from) : `${formatDateBr(from)} → ${formatDateBr(to)}`;
-    const res = buildReportHTML(list, periodLabel);
-    const reportHtml = res.html + `<div style="margin-top:12px"><strong>Observações:</strong> ${escapeHtml(impressaoObservacoes.value||'-')}</div>`;
+    const observ = (impressaoObservacoes && impressaoObservacoes.value) || '';
+    const res = buildReportHTML(list, periodLabel, observ);
+    // abrir nova janela com toolbar "Voltar ao App" e conteudo do relatório
     const w = window.open('','_blank');
     w.document.write(`<html><head><meta charset="utf-8"><title>Relatório</title>
-      <style>body{font-family:Arial;padding:18px} table{width:100%;border-collapse:collapse} th,td{border:1px solid #ddd;padding:8px}</style>
-      </head><body>${reportHtml}</body></html>`);
+      <style>body{font-family:Arial;padding:18px} button{padding:8px 10px;border-radius:6px} table{width:100%;border-collapse:collapse} th,td{border:1px solid #ddd;padding:8px}</style>
+      </head><body>
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div></div>
+        <div><button onclick="window.close()">Voltar ao App</button></div>
+      </div>
+      ${res.html}
+      </body></html>`);
     w.document.close();
-    setTimeout(()=> w.print(), 500);
+    // dar tempo para a janela carregar e depois chamar print
+    setTimeout(()=> w.print(), 600);
   });
 
-  // botão voltar impressão: volta para a aba cadastro (sem criar print.html)
+  // botão voltar impressão local (na aba Impressão)
   if (btnVoltarImpressao) btnVoltarImpressao.addEventListener('click', () => {
     document.querySelector('nav button[data-tab="cadastro"]').click();
   });
@@ -852,9 +903,9 @@ function abrirEdicao(id){
 
   idEmEdicao = id;
 
-  // preencher o formulário com os campos existentes (se existirem)
   try {
     if (form.elements['tipoIngresso']) form.elements['tipoIngresso'].value = c.tipoIngresso || 'inteira';
+    if (form.elements['meiaMotivo']) form.elements['meiaMotivo'].value = c.meiaMotivo || '';
     if (form.elements['nome']) form.elements['nome'].value = c.nome || '';
     if (form.elements['dataNascimento']) form.elements['dataNascimento'].value = c.dataNascimento || '';
     if (form.elements['idade']) form.elements['idade'].value = c.idade || '';
@@ -873,13 +924,33 @@ function abrirEdicao(id){
   }
 
   alergiaLabel.style.display = (c.temAlergia === 'sim') ? 'block' : 'none';
+  meiaMotivoWrapper.style.display = (c.tipoIngresso === 'meia') ? 'block' : 'none';
   updateLiveBadge();
 
   // ir para a aba Cadastro
-  document.querySelector("nav button.active")?.classList.remove("active");
-  document.querySelector("nav button[data-tab='cadastro']")?.classList.add("active");
-  document.querySelector(".tab.active")?.classList.remove("active");
-  document.getElementById("cadastro").classList.add("active");
+  document.querySelector('nav button.active')?.classList.remove('active');
+  document.querySelector("nav button[data-tab='cadastro']")?.classList.add('active');
+  document.querySelector('.tab.active')?.classList.remove('active');
+  document.getElementById('cadastro').classList.add('active');
 }
 
-/* ---------- FIM EDIÇÃO ---------- */
+/* end edição */
+
+/* Histórico filtro de datas (aplica) */
+if (btnFilterHistorico) btnFilterHistorico.addEventListener('click', () => {
+  const from = histFrom.value;
+  const to = histTo.value || from;
+  if (!from) { alert('Escolha a data inicial.'); return; }
+  const start = new Date(from + 'T00:00:00');
+  const end = new Date((to || from) + 'T23:59:59');
+  const filtered = cadastros.filter(c => {
+    const d = new Date(c.createdAt);
+    return d >= start && d <= end;
+  });
+  renderHistorico(filtered);
+});
+if (btnResetHistorico) btnResetHistorico.addEventListener('click', () => {
+  histFrom.value = ''; histTo.value = ''; renderHistorico();
+});
+
+/* end of file */
