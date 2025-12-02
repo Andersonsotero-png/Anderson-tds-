@@ -1,26 +1,24 @@
-// js/script.js — Versão final integrada para o Parquinho (Anderson)
-// Inclui: cadastro, edição, QR, leitura, histórico, impressão, faturamento, marketing, export, segurança
-
-// Helpers
+// script.js — Versão final solicitada
 const $ = s => document.querySelector(s);
 const $$ = s => Array.from(document.querySelectorAll(s));
 const nowISO = () => new Date().toISOString();
 const uid = () => Date.now().toString();
 function escapeHtml(s){ return (s||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-function moneyBR(v){ return Number(v).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}); }
 
-// App state
+// valores das pulseiras (map)
+const VALORES = { inteira: 35.90, meia: 17.95, cortesia: 0.00 };
+
+// estado
 let cadastros = JSON.parse(localStorage.getItem('cadastros') || '[]');
 let cameraStream = null;
 let currentOperator = '';
 let idEmEdicao = null;
 
-// UI refs
+/* UI refs */
 const tabs = $$('nav button');
 const sections = $$('.tab');
 const form = $('#formCadastro');
-const tipoPulseiraSelect = $('#tipoPulseira');
-const motivoMeiaLabel = $('#motivoMeiaLabel');
+const tipoIngressoSelect = $('#tipoIngresso');
 const dataNascimentoInput = form ? form.elements['dataNascimento'] : null;
 const idadeInput = form ? form.elements['idade'] : null;
 const temAlergiaSelect = $('#temAlergia');
@@ -34,7 +32,7 @@ const listaBusca = $('#listaBusca');
 const listaHistoricoContainer = $('#listaHistoricoContainer');
 const btnStartCamera = $('#btnStartCamera');
 const btnStopCamera = $('#btnStopCamera');
-const btnScanNow = $('#btnScanNow');
+const btnScanNow = $('#btnScanNow'); // texto: "Registrar Entrada/Saída"
 const video = $('#video');
 const canvas = $('#scanCanvas');
 const scanMessage = $('#scanMessage');
@@ -42,6 +40,7 @@ const btnRegistrarManual = $('#btnRegistrarManual');
 const btnGerarTodosQR = $('#btnGerarTodosQR');
 const btnDownloadQR = $('#btnDownloadQR');
 const btnPrintLabel = $('#btnPrintLabel');
+const btnPrintLabelSmall = $('#btnPrintLabelSmall');
 const btnExportJSON = $('#btnExportJSON');
 const btnLimparTudo = $('#btnLimparTudo');
 const marketingList = $('#marketingList');
@@ -51,6 +50,7 @@ const btnSendToSelected = $('#btnSendToSelected');
 const marketingMessage = $('#marketingMessage');
 const marketingImage = $('#marketingImage');
 
+/* Impressão refs */
 const quickFilter = $('#quickFilter');
 const filterFrom = $('#filterFrom');
 const filterTo = $('#filterTo');
@@ -58,13 +58,16 @@ const btnFiltrar = $('#btnFiltrar');
 const btnImprimirFiltro = $('#btnImprimirFiltro');
 const relatorioPreview = $('#relatorioPreview');
 const btnVoltarImpressao = $('#btnVoltarImpressao');
+const impressaoObservacoes = $('#impressaoObservacoes');
+const faturamentoResumo = $('#faturamentoResumo');
 
+/* histórico filter */
 const histFrom = $('#histFrom');
 const histTo = $('#histTo');
-const btnFiltrarHistorico = $('#btnFiltrarHistorico');
-const textoDemandas = $('#textoDemandas');
+const btnFilterHistorico = $('#btnFilterHistorico');
+const btnResetHistorico = $('#btnResetHistorico');
 
-// Tabs behaviour
+/* Tabs behavior */
 tabs.forEach(t => t.addEventListener('click', () => {
   tabs.forEach(x => x.classList.remove('active'));
   t.classList.add('active');
@@ -89,13 +92,6 @@ function calcularIdade(dob){
   const m = hoje.getMonth() - dob.getMonth();
   if (m < 0 || (m === 0 && hoje.getDate() < dob.getDate())) idade--;
   return idade;
-}
-
-/* Toggle motivo meia */
-if (tipoPulseiraSelect) {
-  tipoPulseiraSelect.addEventListener('change', () => {
-    motivoMeiaLabel.style.display = (tipoPulseiraSelect.value === 'meia') ? 'block' : 'none';
-  });
 }
 
 /* alergia toggle */
@@ -129,14 +125,13 @@ updateLiveBadge();
 /* persistence */
 function saveCadastros(){ localStorage.setItem('cadastros', JSON.stringify(cadastros)); }
 
-/* form submit (create / edit) */
+/* form submit (criar ou salvar edição) */
 if (form) {
   form.addEventListener('submit', e => {
     e.preventDefault();
 
-    // collect
-    const tipoPulseira = form.elements['tipoPulseira'] ? form.elements['tipoPulseira'].value : '';
-    const motivoMeia = form.elements['motivoMeia'] ? form.elements['motivoMeia'].value : '';
+    // coletar dados do form
+    const tipoIngresso = (form.elements['tipoIngresso'] || {}).value || 'inteira';
     const nome = (form.elements['nome'].value || '').trim();
     const dataNascimento = form.elements['dataNascimento'].value;
     const idade = form.elements['idade'].value || calcularIdade(new Date(dataNascimento));
@@ -151,17 +146,16 @@ if (form) {
     const saiSozinho = (form.elements['saiSozinho'].value || 'nao');
     const observacoes = (form.elements['observacoes'].value || '').trim();
 
-    if (!tipoPulseira) { alert('Selecione o tipo de pulseira (Inteira / Meia / Cortesia).'); return; }
     if (!nome || !dataNascimento) { alert('Preencha nome e data de nascimento'); return; }
 
-    // edit
     if (idEmEdicao) {
+      // salvar edição
       const idx = cadastros.findIndex(c => c.id === idEmEdicao);
       if (idx === -1) { alert('Erro ao salvar edição.'); idEmEdicao = null; return; }
       const atual = cadastros[idx];
       cadastros[idx] = {
         ...atual,
-        tipoPulseira, motivoMeia, nome, dataNascimento, idade, responsavel, telefone, email,
+        tipoIngresso, nome, dataNascimento, idade, responsavel, telefone, email,
         setor, mesa, temAlergia, qualAlergia, altura, saiSozinho, observacoes
       };
       saveCadastros();
@@ -170,14 +164,13 @@ if (form) {
       form.reset();
       if (idadeInput) idadeInput.value = '';
       alergiaLabel.style.display = 'none';
-      motivoMeiaLabel.style.display = 'none';
       updateLiveBadge();
       renderHistorico();
       renderMarketingList();
       return;
     }
 
-    // create
+    // criação nova entrada
     const exists = cadastros.find(c =>
       (c.nome && c.nome.toLowerCase() === nome.toLowerCase() && c.dataNascimento === dataNascimento) ||
       (c.telefone && telefone && c.telefone === telefone)
@@ -188,8 +181,7 @@ if (form) {
 
     const novo = {
       id: uid(),
-      tipoPulseira,
-      motivoMeia,
+      tipoIngresso,
       nome,
       dataNascimento,
       idade,
@@ -215,14 +207,13 @@ if (form) {
     form.reset();
     if (idadeInput) idadeInput.value = '';
     alergiaLabel.style.display = 'none';
-    motivoMeiaLabel.style.display = 'none';
     updateLiveBadge();
     renderHistorico();
     renderMarketingList();
   });
 }
 
-/* QR generation (canvas) for current last created */
+/* QR gen */
 function generateQRCodeCanvas(id){
   if(!qrDiv) return;
   qrDiv.innerHTML = '';
@@ -240,7 +231,17 @@ if (btnDownloadQR) btnDownloadQR.addEventListener('click', () => {
   const a = document.createElement('a'); a.href = url; a.download = 'qr-cadastro.png'; a.click();
 });
 
-/* print label helper (opens window and posts qr image) */
+/* print label wrappers */
+function getBadgeClass(c){
+  if (c.saiSozinho === 'sim') return 'green';
+  if (c.altura === 'maior' && c.saiSozinho === 'nao') return 'yellow';
+  return 'red';
+}
+function getBadgeText(c){
+  if (c.saiSozinho === 'sim') return 'SAI SOZINHO';
+  if (c.altura === 'maior' && c.saiSozinho === 'nao') return 'MAIOR > 1m';
+  return 'NÃO SAI SOZINHO';
+}
 function buildLabelHTML(cadastro, size='large'){
   return `
   <html><head><meta charset="utf-8"><title>Etiqueta</title>
@@ -251,7 +252,8 @@ function buildLabelHTML(cadastro, size='large'){
       <div class="name">${escapeHtml(cadastro.nome)}</div>
       <div class="meta">ID: ${cadastro.id} • Tel: ${escapeHtml(cadastro.telefone||'-')}</div>
       <div class="meta">Setor: ${escapeHtml(cadastro.setor||'-')} • ${escapeHtml(cadastro.mesa||'-')}</div>
-      <div class="meta">Pulseira: ${(cadastro.tipoPulseira||'-').toUpperCase()}</div>
+      <div class="meta">${(cadastro.altura==='maior')? 'Maior que 1m' : 'Menor que 1m'}</div>
+      <div class="meta">${(cadastro.saiSozinho==='sim')? 'Sai sozinho' : 'Não sai sozinho'}</div>
       <div style="margin-top:6px"><span class="badge ${getBadgeClass(cadastro)}">${getBadgeText(cadastro)}</span></div>
     </div>
     <script>
@@ -281,6 +283,11 @@ if (btnPrintLabel) btnPrintLabel.addEventListener('click', () => {
   if (!c) return alert('Nenhum cadastro disponível para imprimir etiqueta.');
   QRCode.toDataURL(String(c.id), { width:400 }).then(url => printLabelForCadastro(c, url, 'large'));
 });
+if (btnPrintLabelSmall) btnPrintLabelSmall.addEventListener('click', () => {
+  const c = cadastros[0];
+  if (!c) return alert('Nenhum cadastro disponível para imprimir etiqueta.');
+  QRCode.toDataURL(String(c.id), { width:200 }).then(url => printLabelForCadastro(c, url, 'small'));
+});
 
 /* gerar todos QRs */
 if (btnGerarTodosQR) btnGerarTodosQR.addEventListener('click', () => {
@@ -296,7 +303,7 @@ if (btnGerarTodosQR) btnGerarTodosQR.addEventListener('click', () => {
   });
 });
 
-/* busca (com alteração/editar) */
+/* busca (funciona por nome, telefone, email, mesa, id) */
 if (inputBusca) inputBusca.addEventListener('input', () => {
   const termo = inputBusca.value.toLowerCase().trim();
   if (!listaBusca) return;
@@ -305,8 +312,9 @@ if (inputBusca) inputBusca.addEventListener('input', () => {
   const results = cadastros.filter(c =>
     (c.nome||'').toLowerCase().includes(termo) ||
     (c.telefone||'').toLowerCase().includes(termo) ||
-    (c.mesa||'').toLowerCase().includes(tero) ||
-    (c.id||'').includes(termo)
+    (c.email||'').toLowerCase().includes(termo) ||
+    (c.mesa||'').toLowerCase().includes(termo) ||
+    (c.id||'').toLowerCase().includes(termo)
   );
   results.forEach(c => {
     const li = document.createElement('li'); li.className = 'card';
@@ -315,18 +323,18 @@ if (inputBusca) inputBusca.addEventListener('input', () => {
       <div><strong>${escapeHtml(c.nome)}</strong> <small>(${escapeHtml(c.idade)} anos)</small><br>
         <small>Setor: ${escapeHtml(c.setor||'-')} • Mesa: ${escapeHtml(c.mesa||'-')}</small><br>
         <small>Alergia: ${(c.temAlergia==='sim')? (escapeHtml(c.qualAlergia) || 'Sim') : 'Não'}</small>
-        <div>Tel: ${escapeHtml(c.telefone||'-')} • Status: ${(c.status==='dentro')? 'No parque' : 'Fora do parque'}</div>
+        <div>Tel: ${escapeHtml(c.telefone||'-')} • Email: ${escapeHtml(c.email||'-')}</div>
       </div>
       <div style="text-align:right">
         ${badgeHTML}<br>
-        <button data-id="${c.id}" class="small-btn btnRegistrar">Registrar</button><br>
-        <button data-id="${c.id}" class="small-btn btnPrintSmall">Imprimir etiqueta</button><br>
-        <button data-id="${c.id}" class="small-btn btnAlterar">Alterar</button>
+        <button data-id="${c.id}" class="btnRegistrar">Registrar Entrada/Saída</button><br>
+        <button data-id="${c.id}" class="btnPrintSmall">Imprimir etiqueta</button><br>
+        <button data-id="${c.id}" class="btnAlterar">Alterar Cadastro</button>
       </div>
     </div>`;
     listaBusca.appendChild(li);
   });
-  // attach events
+  // ligar eventos
   $$('.btnRegistrar').forEach(b => b.addEventListener('click', ev => registrarEntradaSaida(ev.target.dataset.id)));
   $$('.btnPrintSmall').forEach(b => b.addEventListener('click', ev => {
     const id = ev.target.dataset.id;
@@ -337,23 +345,20 @@ if (inputBusca) inputBusca.addEventListener('input', () => {
   $$('.btnAlterar').forEach(b => b.addEventListener('click', ev => abrirEdicao(ev.target.dataset.id)));
 });
 
-/* histórico rendering + buttons (includes Print QR and Delete with password) */
-function renderHistorico(filterFrom=null, filterTo=null){
+/* histórico rendering (com print QR e exclusão protegida por senha) */
+function renderHistorico(filterRange=null){
   if(!listaHistoricoContainer) return;
   listaHistoricoContainer.innerHTML = '';
-  let list = cadastros.slice();
-
-  // apply optional date filter on createdAt
-  if (filterFrom) {
-    const start = new Date(filterFrom + 'T00:00:00');
-    const end = filterTo ? new Date(filterTo + 'T23:59:59') : new Date(filterFrom + 'T23:59:59');
+  let list = cadastros;
+  if (filterRange && filterRange.from) {
+    const start = new Date(filterRange.from + 'T00:00:00');
+    const end = filterRange.to ? new Date(filterRange.to + 'T23:59:59') : new Date(filterRange.from + 'T23:59:59');
     list = list.filter(c => {
       const d = new Date(c.createdAt);
-      return !isNaN(d.getTime()) && d >= start && d <= end;
+      return d >= start && d <= end;
     });
   }
-
-  if (!list.length){ listaHistoricoContainer.textContent = 'Nenhum cadastro.'; return; }
+  if (!list.length){ listaHistoricoContainer.textContent = 'Nenhum cadastro ainda.'; return; }
   list.forEach(c => {
     const div = document.createElement('div'); div.className='card';
     const entradasList = (c.entradas||[]).map(t => `${new Date(t.ts).toLocaleString()} — ${escapeHtml(t.operator||'')}`).join('<br>') || '-';
@@ -362,40 +367,57 @@ function renderHistorico(filterFrom=null, filterTo=null){
     div.innerHTML = `<strong>${escapeHtml(c.nome)}</strong> <small>${escapeHtml(c.idade)} anos</small>
       <div>Responsável: ${escapeHtml(c.responsavel||'-')} | Tel: ${escapeHtml(c.telefone||'-')}</div>
       <div>Setor: ${escapeHtml(c.setor || '-')} | Mesa: ${escapeHtml(c.mesa || '-')}</div>
-      <div>Pulseira: ${(c.tipoPulseira||'-').toUpperCase()} ${c.tipoPulseira === 'meia' && c.motivoMeia ? '('+escapeHtml(c.motivoMeia)+')' : ''}</div>
       <div>Alergia: ${(c.temAlergia === 'sim') ? (escapeHtml(c.qualAlergia) || 'Sim') : 'Não'}</div>
       <div>Status atual: <strong>${c.status === 'dentro' ? '🟢 No parque' : '🔴 Fora do parque'}</strong> ${badgeHTML}</div>
       <div style="margin-top:8px"><strong>Entradas:</strong><br>${entradasList}</div>
       <div style="margin-top:8px"><strong>Saídas:</strong><br>${saidasList}</div>
       <div style="margin-top:8px">
-        <button data-id="${c.id}" class="small-btn btnRegistrar">Registrar</button>
-        <button data-id="${c.id}" class="small-btn btnPrintQR">Imprimir QR</button>
-        <button data-id="${c.id}" class="small-btn btnExcluir">Excluir</button>
-        <button data-id="${c.id}" class="small-btn btnImprimirFicha">Imprimir ficha</button>
-        <button data-id="${c.id}" class="small-btn btnAlterar">Alterar</button>
+        <button data-id="${c.id}" class="btnRegistrar">Registrar Entrada/Saída</button>
+        <button data-id="${c.id}" class="btnImprimirQRCode">Imprimir QR</button>
+        <button data-id="${c.id}" class="btnImprimirFicha">Imprimir ficha</button>
+        <button data-id="${c.id}" class="btnPrintSmall">Imprimir etiqueta</button>
+        <button data-id="${c.id}" class="btnAlterar">Alterar Cadastro</button>
+        <button data-id="${c.id}" class="btnExcluir">Excluir</button>
       </div>`;
     listaHistoricoContainer.appendChild(div);
   });
-
-  // bind events
   $$('.btnRegistrar').forEach(b => b.addEventListener('click', ev => registrarEntradaSaida(ev.target.dataset.id)));
-  $$('.btnExcluir').forEach(b => b.addEventListener('click', ev => excluirCadastro(ev.target.dataset.id)));
+  $$('.btnExcluir').forEach(b => b.addEventListener('click', ev => excluirCadastroComSenha(ev.target.dataset.id)));
+  $$('.btnImprimirQRCode').forEach(b => b.addEventListener('click', ev => imprimirQrIndividual(ev.target.dataset.id)));
   $$('.btnImprimirFicha').forEach(b => b.addEventListener('click', ev => imprimirFicha(ev.target.dataset.id)));
-  $$('.btnPrintQR').forEach(b => b.addEventListener('click', ev => imprimirQRIndividual(ev.target.dataset.id)));
+  $$('.btnPrintSmall').forEach(b => b.addEventListener('click', ev => {
+    const id = ev.target.dataset.id;
+    const c = cadastros.find(x=>x.id===id);
+    if (!c) return;
+    QRCode.toDataURL(String(c.id), { width:200 }).then(url => printLabelForCadastro(c, url, 'small'));
+  }));
   $$('.btnAlterar').forEach(b => b.addEventListener('click', ev => abrirEdicao(ev.target.dataset.id)));
 }
 
-/* excluir com senha */
+/* exclusão protegida por senha */
+function excluirCadastroComSenha(id){
+  const senha = prompt('Senha para apagar cadastro (somente responsáveis):');
+  if (!senha) return;
+  if (senha !== 'tds_1992') return alert('Senha incorreta.');
+  excluirCadastro(id);
+}
 function excluirCadastro(id){
-  // senha requerida
-  const senha = prompt('Senha necessária para excluir (apenas responsáveis):','');
-  if (senha !== 'tds_1992') { return alert('Senha incorreta. Exclusão cancelada.'); }
-  if(!confirm('Excluir cadastro permanentemente?')) return;
   cadastros = cadastros.filter(c => c.id !== id);
   saveCadastros();
   renderHistorico();
   renderMarketingList();
-  alert('Cadastro excluído.');
+}
+
+/* imprimir QR individual */
+function imprimirQrIndividual(id){
+  const c = cadastros.find(x => x.id === id);
+  if (!c) return alert('Cadastro não encontrado.');
+  QRCode.toDataURL(String(c.id), { width:400 }).then(url => {
+    const w = window.open('', '_blank');
+    w.document.write(`<html><body style="text-align:center"><h3>${escapeHtml(c.nome)}</h3><img src="${url}" style="max-width:60%"><div>ID: ${c.id}</div></body></html>`);
+    w.document.close();
+    setTimeout(()=> w.print(), 400);
+  });
 }
 
 /* imprimir ficha */
@@ -406,10 +428,10 @@ function imprimirFicha(id){
   const html = `<html><head><meta charset="utf-8"><title>Ficha - ${escapeHtml(c.nome)}</title>
       <style>body{font-family:Arial;padding:16px}</style></head><body>
       <h2>${escapeHtml(c.nome)}</h2>
+      <div>Tipo ingresso: ${escapeHtml(c.tipoIngresso || '-')}</div>
       <div>Idade: ${escapeHtml(c.idade)}</div>
       <div>Nascido em: ${escapeHtml(c.dataNascimento)}</div>
       <div>Setor: ${escapeHtml(c.setor||'-')} | Mesa: ${escapeHtml(c.mesa||'-')}</div>
-      <div>Pulseira: ${(c.tipoPulseira||'-').toUpperCase()} ${c.tipoPulseira === 'meia' && c.motivoMeia ? '('+escapeHtml(c.motivoMeia)+')' : ''}</div>
       <div>Alergia: ${(c.temAlergia === 'sim') ? (escapeHtml(c.qualAlergia) || 'Sim') : 'Não'}</div>
       <div>Responsável: ${escapeHtml(c.responsavel || '-') } | Tel: ${escapeHtml(c.telefone || '-')}</div>
       <hr>
@@ -421,18 +443,7 @@ function imprimirFicha(id){
   setTimeout(()=> w.print(), 500);
 }
 
-/* imprimir QR individual */
-function imprimirQRIndividual(id){
-  const c = cadastros.find(x => x.id === id);
-  if(!c){ alert('Cadastro não encontrado'); return; }
-  QRCode.toDataURL(String(c.id), { width:400 }).then(url => {
-    printLabelForCadastro(c, url, 'large');
-  }).catch(err => {
-    console.error(err); alert('Erro ao gerar QR para impressão.');
-  });
-}
-
-/* registrar entrada/saída with operator and exit protection */
+/* registrar entrada/saída */
 function registrarEntradaSaida(id, operatorNameOverride=null){
   const c = cadastros.find(x => x.id === id);
   if(!c){ alert('Cadastro não encontrado'); return; }
@@ -446,7 +457,9 @@ function registrarEntradaSaida(id, operatorNameOverride=null){
     // tentativa de saída
     if (c.saiSozinho !== 'sim') {
       const opt = confirm(`${c.nome} NÃO está autorizado a sair sozinho. Deseja contatar o responsável agora?`);
-      if (opt) contactResponsibleOptions(c);
+      if (opt) {
+        contactResponsibleOptions(c);
+      }
       c.saidas = c.saidas || [];
       c.saidas.push({ ts: nowISO(), operator, blocked: true });
       alert('Saída BLOQUEADA — contato acionado (se confirmado).');
@@ -488,7 +501,7 @@ Digite 1-4`, '1');
   }
 }
 
-/* Camera & QR scan (scan-by-button mode) */
+/* Camera & QR scan (modo B: escanear por botão) */
 const ctx = canvas ? canvas.getContext('2d') : null;
 btnStartCamera && btnStartCamera.addEventListener('click', async () => {
   if (cameraStream) return;
@@ -518,18 +531,19 @@ btnScanNow && btnScanNow.addEventListener('click', () => {
   const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: "attemptBoth" });
   if (code) {
     scanMessage.textContent = `QR detectado: ${code.data}`;
+    // handle payload
     handleScannedPayload(code.data);
   } else {
     alert('Nenhum QR detectado nesta captura. Ajuste a posição e tente novamente.');
   }
 });
 
-/* handle scanned QR data */
 function handleScannedPayload(payload){
   const c = cadastros.find(x => x.id === String(payload));
   if (!c) { alert('QR não corresponde a nenhum cadastro.'); return; }
   // If currently outside => register entry
   if (c.status === 'fora' || !c.status) {
+    // entry
     c.entradas = c.entradas || [];
     c.entradas.push({ ts: nowISO(), operator: currentOperator || 'Operador' });
     c.status = 'dentro';
@@ -539,12 +553,14 @@ function handleScannedPayload(payload){
   }
   // currently inside => attempt exit
   if (c.saiSozinho !== 'sim') {
+    // pulseira vermelha or yellow (if not allowed) => block and show contact options
     alert(`${c.nome} NÃO está autorizado a sair sozinho. A saída foi bloqueada.`);
     contactResponsibleOptions(c);
     c.saidas = c.saidas || [];
     c.saidas.push({ ts: nowISO(), operator: currentOperator || 'Operador', blocked: true });
     saveCadastros(); renderHistorico(); renderMarketingList();
   } else {
+    // allowed to exit
     c.saidas = c.saidas || [];
     c.saidas.push({ ts: nowISO(), operator: currentOperator || 'Operador' });
     c.status = 'fora';
@@ -553,7 +569,7 @@ function handleScannedPayload(payload){
   }
 }
 
-/* manual register via search field */
+/* manual register */
 if (btnRegistrarManual) btnRegistrarManual.addEventListener('click', () => {
   const termo = inputBusca ? inputBusca.value.trim() : '';
   if (!termo) { alert('Digite nome/telefone/pulseira no campo de busca para registrar manualmente.'); return; }
@@ -562,7 +578,7 @@ if (btnRegistrarManual) btnRegistrarManual.addEventListener('click', () => {
   registrarEntradaSaida(found.id);
 });
 
-/* imprimir lista (geral) */
+/* imprimir lista (botão geral) */
 const btnImprimir = $('#btnImprimir');
 if (btnImprimir) btnImprimir.addEventListener('click', () => {
   if (!cadastros.length){ alert('Nenhum cadastro para imprimir'); return; }
@@ -575,10 +591,11 @@ if (btnImprimir) btnImprimir.addEventListener('click', () => {
       <td>${escapeHtml(c.setor||'-')} / ${escapeHtml(c.mesa||'-')}</td><td>${c.status==='dentro' ? 'No parque' : 'Fora do parque'}</td></tr>`;
   });
   html += '</tbody></table></body></html>';
-  w.document.write(html); w.document.close(); setTimeout(()=> w.print(), 500);
+  w.document.write(html); w.document.close();
+  setTimeout(()=> w.print(), 500);
 });
 
-/* MARKETING list rendering */
+/* MARKETING: render list */
 function renderMarketingList(){
   if (!marketingList) return;
   marketingList.innerHTML = '';
@@ -606,21 +623,21 @@ if (btnClearAll) btnClearAll.addEventListener('click', () => { $$('#marketingLis
 function openWhatsApp(number, text=''){
   if (!number) return alert('Número ausente.');
   const digits = number.replace(/\D/g,'');
-  const encoded = encodeURIComponent(text || '');
+  const encoded = encodeURIComponent(text);
   window.open(`https://wa.me/${digits}?text=${encoded}`, '_blank');
 }
 function openSMS(number, body=''){
   if (!number) return alert('Número ausente.');
-  const encoded = encodeURIComponent(body || '');
+  const encoded = encodeURIComponent(body);
   window.open(`sms:${number}?body=${encoded}`, '_blank');
 }
 function openMail(email, subject='', body=''){
   if (!email) return alert('Email ausente.');
-  const s = encodeURIComponent(subject||''); const b = encodeURIComponent(body||'');
+  const s = encodeURIComponent(subject); const b = encodeURIComponent(body);
   window.open(`mailto:${email}?subject=${s}&body=${b}`, '_blank');
 }
 
-/* Send to selected */
+/* Send to selected (fallback behavior) */
 if (btnSendToSelected) btnSendToSelected.addEventListener('click', async () => {
   const message = (marketingMessage.value || '').trim();
   const selected = $$('#marketingList input[type="checkbox"]:checked').map(i => i.dataset.id);
@@ -652,10 +669,12 @@ if (btnSendToSelected) btnSendToSelected.addEventListener('click', async () => {
 });
 
 /* Export / clear */
+// btnExportJSON agora gera Excel (.xlsx) usando SheetJS
 if (btnExportJSON) btnExportJSON.addEventListener('click', () => {
   if (!cadastros.length) { alert('Sem dados para exportar.'); return; }
   const dataForExport = cadastros.map(c => ({
     id: c.id,
+    tipoIngresso: c.tipoIngresso,
     nome: c.nome,
     dataNascimento: c.dataNascimento,
     idade: c.idade,
@@ -664,8 +683,6 @@ if (btnExportJSON) btnExportJSON.addEventListener('click', () => {
     email: c.email,
     setor: c.setor,
     mesa: c.mesa,
-    tipoPulseira: c.tipoPulseira,
-    motivoMeia: c.motivoMeia,
     temAlergia: c.temAlergia,
     qualAlergia: c.qualAlergia,
     altura: c.altura,
@@ -680,6 +697,7 @@ if (btnExportJSON) btnExportJSON.addEventListener('click', () => {
   XLSX.writeFile(workbook, "historico-parquinho.xlsx");
 });
 
+// Limpar tudo
 if (btnLimparTudo) btnLimparTudo.addEventListener('click', () => {
   if (!confirm('Apagar todos os dados locais?')) return;
   localStorage.removeItem('cadastros');
@@ -689,12 +707,12 @@ if (btnLimparTudo) btnLimparTudo.addEventListener('click', () => {
   alert('Dados apagados.');
 });
 
-/* Service worker */
+/* Service worker (se existir) */
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('./service-worker.js').then(()=> console.log('SW registrado')).catch(e=>console.warn('SW erro', e));
 }
 
-/* Init */
+/* init */
 (function init(){
   cadastros = cadastros.map(c => ({ entradas: c.entradas || [], saidas: c.saidas || [], status: c.status || 'fora', createdAt: c.createdAt || nowISO(), ...c }));
   renderHistorico();
@@ -702,42 +720,13 @@ if ('serviceWorker' in navigator) {
   attachPrintFilterEvents();
 })();
 
-/* --------- Printing / Reports & Faturamento --------- */
-
-/* Pricing */
-const PRICES = {
-  inteira: 35.90,
-  meia: 17.95,
-  cortesia: 0
-};
-
-function computeRevenue(list){
-  const summary = { inteira:0, meia:0, cortesia:0, totalCount:0, gross:0 };
-  list.forEach(c => {
-    const t = c.tipoPulseira || 'cortesia';
-    summary[t] = (summary[t] || 0) + 1;
-    summary.totalCount++;
-    summary.gross += (PRICES[t] || 0);
-  });
-  return summary;
-}
-
-function getBadgeClass(c){
-  if (c.saiSozinho === 'sim') return 'green';
-  if (c.altura === 'maior' && c.saiSozinho === 'nao') return 'yellow';
-  return 'red';
-}
-function getBadgeText(c){
-  if (c.saiSozinho === 'sim') return 'SAI SOZINHO';
-  if (c.altura === 'maior' && c.saiSozinho === 'nao') return 'MAIOR > 1m';
-  return 'NÃO SAI SOZINHO';
-}
+/* --------- Impressão / Relatórios --------- */
 
 function toDateOnly(iso){
   if(!iso) return null;
   const d = new Date(iso);
   if (isNaN(d.getTime())) return null;
-  return d.toISOString().slice(0,10);
+  return d.toISOString().slice(0,10); // yyyy-mm-dd
 }
 
 function filtrarPorPeriodo(from, to){
@@ -754,25 +743,34 @@ function filtrarPorPeriodo(from, to){
 
 function formatDateBr(iso){
   const d = new Date(iso);
-  if (isNaN(d.getTime())) return iso || '';
+  if (isNaN(d.getTime())) return iso;
   return d.toLocaleDateString();
 }
 
-function buildReportHTML(list, periodLabel, demandasText){
+function buildReportHTML(list, periodLabel, observacoes){
   const total = list.length;
-  // day counts
+  // counts per ingresso
+  const counts = { inteira:0, meia:0, cortesia:0 };
+  list.forEach(c => {
+    const t = c.tipoIngresso || 'inteira';
+    counts[t] = (counts[t]||0) + 1;
+  });
+  const bruto = counts.inteira * VALORES.inteira + counts.meia * VALORES.meia + counts.cortesia * VALORES.cortesia;
+  // per day grouping (counts)
   const byDay = {};
   list.forEach(c => {
     const day = toDateOnly(c.createdAt) || 'unknown';
-    byDay[day] = (byDay[day] || 0) + 1;
+    byDay[day] = byDay[day] || { total:0, inteira:0, meia:0, cortesia:0 };
+    byDay[day].total++;
+    const t = c.tipoIngresso || 'inteira';
+    byDay[day][t] = (byDay[day][t] || 0) + 1;
   });
   let perDayHtml = '';
   Object.keys(byDay).sort().forEach(day => {
-    perDayHtml += `<div><strong>${day}</strong> — ${byDay[day]} crianças</div>`;
+    const d = byDay[day];
+    const dayBruto = (d.inteira * VALORES.inteira) + (d.meia * VALORES.meia);
+    perDayHtml += `<div><strong>${day}</strong> — Total: ${d.total} (Inteira: ${d.inteira}, Meia: ${d.meia}, Cortesia: ${d.cortesia}) — Valor dia: R$ ${dayBruto.toFixed(2)}</div>`;
   });
-
-  // revenue
-  const rev = computeRevenue(list);
 
   let html = `<div id="relatorioPrint" class="report-wrapper">
     <img class="report-watermark" src="assets/icons/icon-512.png" alt="marca" />
@@ -780,50 +778,25 @@ function buildReportHTML(list, periodLabel, demandasText){
       <img src="assets/icons/icon-512.png" alt="logo" />
       <div>
         <div class="report-title">Relatório – Terra do Sol – Parquinho Infantil</div>
-        <div class="report-meta">Período selecionado: ${escapeHtml(periodLabel)}</div>
+        <div class="report-meta">Período: ${periodLabel}</div>
         <div class="report-meta">Crianças registradas: <strong>${total}</strong></div>
-        <div class="report-meta">Faturamento bruto: <strong>${moneyBR(rev.gross)}</strong></div>
       </div>
     </div>
 
     <div style="margin-top:12px">${perDayHtml}</div>
 
-    <table class="report-table" style="margin-top:12px">
-      <thead><tr><th>Nome</th><th>Idade</th><th>Setor</th><th>Pulseira</th><th>Valor</th></tr></thead>
-      <tbody>`;
-
-  list.forEach(c => {
-    const pulseira = (c.tipoPulseira || 'cortesia').toUpperCase();
-    const valor = PRICES[c.tipoPulseira || 'cortesia'] || 0;
-    html += `<tr>
-      <td>${escapeHtml(c.nome)}</td>
-      <td>${escapeHtml(c.idade)}</td>
-      <td>${escapeHtml(c.setor||'-')}</td>
-      <td>${pulseira}${c.tipoPulseira === 'meia' && c.motivoMeia ? ' ('+escapeHtml(c.motivoMeia)+')' : ''}</td>
-      <td>${moneyBR(valor)}</td>
-    </tr>`;
-  });
-
-  html += `</tbody></table>
-
-    <div style="margin-top:14px">
-      <h4>Resumo por tipo</h4>
-      <div>Inteira: ${rev.inteira} — ${moneyBR(rev.inteira * PRICES.inteira)}</div>
-      <div>Meia: ${rev.meia} — ${moneyBR(rev.meia * PRICES.meia)}</div>
-      <div>Cortesia: ${rev.cortesia} — ${moneyBR(rev.cortesia * PRICES.cortesia)}</div>
-      <div style="margin-top:8px"><strong>Valor bruto do período: ${moneyBR(rev.gross)}</strong></div>
+    <div style="margin-top:12px"><strong>Resumo de vendas</strong>
+      <div>Inteiras: ${counts.inteira} × R$ ${VALORES.inteira.toFixed(2)} = R$ ${(counts.inteira * VALORES.inteira).toFixed(2)}</div>
+      <div>Meias: ${counts.meia} × R$ ${VALORES.meia.toFixed(2)} = R$ ${(counts.meia * VALORES.meia).toFixed(2)}</div>
+      <div>Cortesia: ${counts.cortesia} (R$ 0,00)</div>
+      <div style="margin-top:6px"><strong>VALOR BRUTO DO PERÍODO: R$ ${bruto.toFixed(2)}</strong></div>
     </div>
 
-    <div style="margin-top:14px">
-      <h4>Demandas / Ocorrências</h4>
-      <div>${escapeHtml(demandasText || '-')}</div>
-    </div>
-
+    <div style="margin-top:12px"><strong>Observações / Demandas:</strong><div>${escapeHtml(observacoes || '')}</div></div>
   </div>`;
-  return html;
+  return { html, bruto };
 }
 
-/* Attach print filter events & back button */
 function attachPrintFilterEvents(){
   if (!quickFilter) return;
   quickFilter.addEventListener('change', () => {
@@ -847,47 +820,59 @@ function attachPrintFilterEvents(){
     }
   });
 
-  btnFiltrar.addEventListener('click', () => {
+  if (btnFiltrar) btnFiltrar.addEventListener('click', () => {
     const from = filterFrom.value;
     const to = filterTo.value || from;
     if (!from) return alert('Escolha a data inicial.');
     const list = filtrarPorPeriodo(from, to);
     const periodLabel = (from === to) ? formatDateBr(from) : `${formatDateBr(from)} → ${formatDateBr(to)}`;
-    relatorioPreview.innerHTML = buildReportHTML(list, periodLabel, textoDemandas ? textoDemandas.value : '');
+    const obs = (impressaoObservacoes && impressaoObservacoes.value) || '';
+    const res = buildReportHTML(list, periodLabel, obs);
+    relatorioPreview.innerHTML = res.html;
+    faturamentoResumo.innerHTML = `<strong>VALOR BRUTO DO PERÍODO: R$ ${res.bruto.toFixed(2)}</strong>`;
   });
 
-  btnImprimirFiltro.addEventListener('click', () => {
+  if (btnImprimirFiltro) btnImprimirFiltro.addEventListener('click', () => {
     const from = filterFrom.value;
     const to = filterTo.value || from;
     if (!from) return alert('Escolha a data inicial para imprimir.');
     const list = filtrarPorPeriodo(from, to);
     const periodLabel = (from === to) ? formatDateBr(from) : `${formatDateBr(from)} → ${formatDateBr(to)}`;
-    const reportHtml = buildReportHTML(list, periodLabel, textoDemandas ? textoDemandas.value : '');
+    const obs = (impressaoObservacoes && impressaoObservacoes.value) || '';
+    const res = buildReportHTML(list, periodLabel, obs);
     const w = window.open('','_blank');
     w.document.write(`<html><head><meta charset="utf-8"><title>Relatório</title>
       <style>body{font-family:Arial;padding:18px} table{width:100%;border-collapse:collapse} th,td{border:1px solid #ddd;padding:8px}</style>
-      </head><body>${reportHtml}</body></html>`);
+      </head><body>${res.html}</body></html>`);
     w.document.close();
     setTimeout(()=> w.print(), 500);
   });
 
-  // Back button (volta para a aba cadastro)
+  // botão voltar impressão: volta para a aba cadastro
   if (btnVoltarImpressao) btnVoltarImpressao.addEventListener('click', () => {
     document.querySelector('nav button[data-tab="cadastro"]').click();
   });
 }
-attachPrintFilterEvents();
 
-/* ---------- EDIÇÃO ---------- */
+/* ---------- Filtro do Histórico ---------- */
+if (btnFilterHistorico) btnFilterHistorico.addEventListener('click', () => {
+  const from = histFrom.value;
+  const to = histTo.value || from;
+  if (!from) return alert('Escolha a data inicial.');
+  renderHistorico({ from, to });
+});
+if (btnResetHistorico) btnResetHistorico.addEventListener('click', () => {
+  histFrom.value = ''; histTo.value = '';
+  renderHistorico();
+});
+
+/* ---------- EDIÇÃO: abrirEdicao ---------- */
 function abrirEdicao(id){
   const c = cadastros.find(x => x.id === id);
   if (!c) { alert('Cadastro não encontrado para edição'); return; }
-
   idEmEdicao = id;
-
   try {
-    if (form.elements['tipoPulseira']) form.elements['tipoPulseira'].value = c.tipoPulseira || '';
-    if (form.elements['motivoMeia']) form.elements['motivoMeia'].value = c.motivoMeia || '';
+    if (form.elements['tipoIngresso']) form.elements['tipoIngresso'].value = c.tipoIngresso || 'inteira';
     if (form.elements['nome']) form.elements['nome'].value = c.nome || '';
     if (form.elements['dataNascimento']) form.elements['dataNascimento'].value = c.dataNascimento || '';
     if (form.elements['idade']) form.elements['idade'].value = c.idade || '';
@@ -904,12 +889,9 @@ function abrirEdicao(id){
   } catch(e){
     console.warn('Erro ao preencher form para edição', e);
   }
-
   alergiaLabel.style.display = (c.temAlergia === 'sim') ? 'block' : 'none';
-  motivoMeiaLabel.style.display = (c.tipoPulseira === 'meia') ? 'block' : 'none';
   updateLiveBadge();
-
-  // switch to cadastro tab
+  // ir para a aba Cadastro
   document.querySelector("nav button.active")?.classList.remove("active");
   document.querySelector("nav button[data-tab='cadastro']")?.classList.add("active");
   document.querySelector(".tab.active")?.classList.remove("active");
