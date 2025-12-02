@@ -42,6 +42,17 @@
           </select>
         </label>
 
+        <div id="meiaMotivoWrapper" style="display:none">
+          <label>Motivo da meia:
+            <select name="meiaMotivo" id="meiaMotivo">
+              <option value="">Selecione</option>
+              <option value="pcd">PCD</option>
+              <option value="tea">TEA</option>
+              <option value="down">Down</option>
+            </select>
+          </label>
+        </div>
+
         <label>Nome completo (criança):
           <input type="text" name="nome" required />
         </label>
@@ -135,8 +146,7 @@
           <button id="btnStartCamera">Abrir câmera</button>
           <button id="btnStopCamera" disabled>Fechar câmera</button>
           <button id="btnScanNow" disabled>Registrar Entrada/Saída</button>
-          <!-- botão manual RENOMEADO conforme seu pedido -->
-          <button id="btnRegistrarManual">Entrada / Saída</button>
+          <button id="btnRegistrarManual">Registrar Manual</button>
         </div>
 
         <div id="videoWrap">
