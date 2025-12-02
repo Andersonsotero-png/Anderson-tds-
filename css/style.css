@@ -5,7 +5,7 @@
   --bg:#f8f9fa;
   --muted:#6b6b6b;
   --card:#ffffff;
-  --radius:10px;
+  --radius:8px;
   --green:#2ecc71;
   --red:#e74c3c;
   --yellow:#f1c40f;
@@ -17,7 +17,7 @@ header{background:linear-gradient(90deg,var(--teal-light) 0%,var(--orange-strong
 .brand img{width:44px;height:44px;border-radius:8px;background:var(--white);padding:4px;object-fit:cover}
 header h1{margin:0;font-size:1.25rem;font-weight:700}
 nav{display:flex;justify-content:center;gap:6px;margin-top:8px}
-nav button{background:transparent;color:rgba(255,255,255,0.95);border:2px solid rgba(255,255,255,0.12);padding:8px 12px;border-radius:8px;font-weight:600;cursor:pointer}
+nav button{background:transparent;color:rgba(255,255,255,0.95);border:2px solid rgba(255,255,255,0.12);padding:8px 12px;border-radius:10px;font-weight:600;cursor:pointer}
 nav button.active{background:rgba(255,255,255,0.12);box-shadow:0 2px 6px rgba(0,0,0,0.08)}
 main{max-width:980px;margin:18px auto;padding:12px}
 .tab{display:none}
@@ -28,10 +28,12 @@ form input, form textarea, form select{width:100%;padding:10px;border-radius:8px
 textarea{min-height:80px;resize:vertical}
 .row{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;align-items:center}
 .row button { margin-bottom: 8px; } /* melhora espaçamento vertical */
-button{background:var(--orange-strong);color:var(--white);border:none;padding:10px 12px;border-radius:8px;cursor:pointer;font-weight:700}
+button{background:var(--orange-strong);color:var(--white);border:none;padding:8px 10px;border-radius:8px;cursor:pointer;font-weight:700}
 button.secondary{background:var(--teal-light)}
-/* reduzir levemente o raio dos botões dentro do histórico e marketing para ficar mais compacto */
-.card .row button, .contact-actions button, .card button { border-radius:6px; padding:8px 10px; font-weight:700; }
+/* espaçamento e borda mais fina nos botões do histórico/marketing */
+.card .row button, .contact-actions button { padding:6px 8px; border-radius:6px; font-weight:700; border:1px solid rgba(0,0,0,0.06); }
+
+/* QR area */
 #qrCodeCadastro{margin-top:12px;display:flex;gap:8px;flex-wrap:wrap}
 #videoWrap{max-width:420px;margin-top:12px;border-radius:8px;overflow:hidden}
 #video{width:100%;height:auto;background:#000;display:block}
@@ -80,3 +82,6 @@ button + button { margin-left: 6px; }
 .report-meta{margin-top:6px;color:var(--muted)}
 .report-table{width:100%;border-collapse:collapse;margin-top:12px}
 .report-table th, .report-table td{border:1px solid #ddd;padding:8px;text-align:left;font-size:13px}
+
+/* small helpers */
+.small-muted{color:var(--muted);font-size:13px}
