@@ -1,12 +1,11 @@
-// script.js — Versão final solicitada
+// script.js — Versão final solicitada (corrigida conforme HTML enviado)
+
+// utilitários
 const $ = s => document.querySelector(s);
 const $$ = s => Array.from(document.querySelectorAll(s));
 const nowISO = () => new Date().toISOString();
 const uid = () => Date.now().toString();
 function escapeHtml(s){ return (s||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-
-// valores das pulseiras (map)
-const VALORES = { inteira: 35.90, meia: 17.95, cortesia: 0.00 };
 
 // estado
 let cadastros = JSON.parse(localStorage.getItem('cadastros') || '[]');
@@ -18,7 +17,6 @@ let idEmEdicao = null;
 const tabs = $$('nav button');
 const sections = $$('.tab');
 const form = $('#formCadastro');
-const tipoIngressoSelect = $('#tipoIngresso');
 const dataNascimentoInput = form ? form.elements['dataNascimento'] : null;
 const idadeInput = form ? form.elements['idade'] : null;
 const temAlergiaSelect = $('#temAlergia');
@@ -61,13 +59,13 @@ const btnVoltarImpressao = $('#btnVoltarImpressao');
 const impressaoObservacoes = $('#impressaoObservacoes');
 const faturamentoResumo = $('#faturamentoResumo');
 
-/* histórico filter */
+/* Histórico filter refs */
 const histFrom = $('#histFrom');
 const histTo = $('#histTo');
 const btnFilterHistorico = $('#btnFilterHistorico');
 const btnResetHistorico = $('#btnResetHistorico');
 
-/* Tabs behavior */
+/* Tabs */
 tabs.forEach(t => t.addEventListener('click', () => {
   tabs.forEach(x => x.classList.remove('active'));
   t.classList.add('active');
@@ -131,7 +129,7 @@ if (form) {
     e.preventDefault();
 
     // coletar dados do form
-    const tipoIngresso = (form.elements['tipoIngresso'] || {}).value || 'inteira';
+    const tipoIngresso = (form.elements['tipoIngresso'] && form.elements['tipoIngresso'].value) || 'inteira';
     const nome = (form.elements['nome'].value || '').trim();
     const dataNascimento = form.elements['dataNascimento'].value;
     const idade = form.elements['idade'].value || calcularIdade(new Date(dataNascimento));
@@ -303,9 +301,9 @@ if (btnGerarTodosQR) btnGerarTodosQR.addEventListener('click', () => {
   });
 });
 
-/* busca (funciona por nome, telefone, email, mesa, id) */
+/* busca (adicionada opção de Alterar Cadastro) */
 if (inputBusca) inputBusca.addEventListener('input', () => {
-  const termo = inputBusca.value.toLowerCase().trim();
+  const termo = (inputBusca.value || '').toLowerCase().trim();
   if (!listaBusca) return;
   listaBusca.innerHTML = '';
   if (!termo) return;
@@ -314,7 +312,7 @@ if (inputBusca) inputBusca.addEventListener('input', () => {
     (c.telefone||'').toLowerCase().includes(termo) ||
     (c.email||'').toLowerCase().includes(termo) ||
     (c.mesa||'').toLowerCase().includes(termo) ||
-    (c.id||'').toLowerCase().includes(termo)
+    (c.id||'').includes(termo)
   );
   results.forEach(c => {
     const li = document.createElement('li'); li.className = 'card';
@@ -323,11 +321,11 @@ if (inputBusca) inputBusca.addEventListener('input', () => {
       <div><strong>${escapeHtml(c.nome)}</strong> <small>(${escapeHtml(c.idade)} anos)</small><br>
         <small>Setor: ${escapeHtml(c.setor||'-')} • Mesa: ${escapeHtml(c.mesa||'-')}</small><br>
         <small>Alergia: ${(c.temAlergia==='sim')? (escapeHtml(c.qualAlergia) || 'Sim') : 'Não'}</small>
-        <div>Tel: ${escapeHtml(c.telefone||'-')} • Email: ${escapeHtml(c.email||'-')}</div>
+        <div>Tel: ${escapeHtml(c.telefone||'-')} • Status: ${(c.status==='dentro')? 'No parque' : 'Fora do parque'}</div>
       </div>
       <div style="text-align:right">
         ${badgeHTML}<br>
-        <button data-id="${c.id}" class="btnRegistrar">Registrar Entrada/Saída</button><br>
+        <button data-id="${c.id}" class="btnRegistrar">Entrada / Saída</button><br>
         <button data-id="${c.id}" class="btnPrintSmall">Imprimir etiqueta</button><br>
         <button data-id="${c.id}" class="btnAlterar">Alterar Cadastro</button>
       </div>
@@ -345,18 +343,18 @@ if (inputBusca) inputBusca.addEventListener('input', () => {
   $$('.btnAlterar').forEach(b => b.addEventListener('click', ev => abrirEdicao(ev.target.dataset.id)));
 });
 
-/* histórico rendering (com print QR e exclusão protegida por senha) */
-function renderHistorico(filterRange=null){
+/* histórico */
+function renderHistorico(filterFrom=null, filterTo=null){
   if(!listaHistoricoContainer) return;
   listaHistoricoContainer.innerHTML = '';
-  let list = cadastros;
-  if (filterRange && filterRange.from) {
-    const start = new Date(filterRange.from + 'T00:00:00');
-    const end = filterRange.to ? new Date(filterRange.to + 'T23:59:59') : new Date(filterRange.from + 'T23:59:59');
-    list = list.filter(c => {
-      const d = new Date(c.createdAt);
-      return d >= start && d <= end;
-    });
+  let list = cadastros.slice();
+  if (filterFrom) {
+    const start = new Date(filterFrom + "T00:00:00");
+    list = list.filter(c => new Date(c.createdAt) >= start);
+  }
+  if (filterTo) {
+    const end = new Date(filterTo + "T23:59:59");
+    list = list.filter(c => new Date(c.createdAt) <= end);
   }
   if (!list.length){ listaHistoricoContainer.textContent = 'Nenhum cadastro ainda.'; return; }
   list.forEach(c => {
@@ -372,18 +370,16 @@ function renderHistorico(filterRange=null){
       <div style="margin-top:8px"><strong>Entradas:</strong><br>${entradasList}</div>
       <div style="margin-top:8px"><strong>Saídas:</strong><br>${saidasList}</div>
       <div style="margin-top:8px">
-        <button data-id="${c.id}" class="btnRegistrar">Registrar Entrada/Saída</button>
-        <button data-id="${c.id}" class="btnImprimirQRCode">Imprimir QR</button>
+        <button data-id="${c.id}" class="btnRegistrar">Entrada / Saída</button>
         <button data-id="${c.id}" class="btnImprimirFicha">Imprimir ficha</button>
         <button data-id="${c.id}" class="btnPrintSmall">Imprimir etiqueta</button>
+        <button data-id="${c.id}" class="btnExcluir">Excluir (senha)</button>
         <button data-id="${c.id}" class="btnAlterar">Alterar Cadastro</button>
-        <button data-id="${c.id}" class="btnExcluir">Excluir</button>
       </div>`;
     listaHistoricoContainer.appendChild(div);
   });
   $$('.btnRegistrar').forEach(b => b.addEventListener('click', ev => registrarEntradaSaida(ev.target.dataset.id)));
-  $$('.btnExcluir').forEach(b => b.addEventListener('click', ev => excluirCadastroComSenha(ev.target.dataset.id)));
-  $$('.btnImprimirQRCode').forEach(b => b.addEventListener('click', ev => imprimirQrIndividual(ev.target.dataset.id)));
+  $$('.btnExcluir').forEach(b => b.addEventListener('click', ev => excluirCadastro(ev.target.dataset.id)));
   $$('.btnImprimirFicha').forEach(b => b.addEventListener('click', ev => imprimirFicha(ev.target.dataset.id)));
   $$('.btnPrintSmall').forEach(b => b.addEventListener('click', ev => {
     const id = ev.target.dataset.id;
@@ -393,31 +389,17 @@ function renderHistorico(filterRange=null){
   }));
   $$('.btnAlterar').forEach(b => b.addEventListener('click', ev => abrirEdicao(ev.target.dataset.id)));
 }
+renderHistorico();
 
-/* exclusão protegida por senha */
-function excluirCadastroComSenha(id){
-  const senha = prompt('Senha para apagar cadastro (somente responsáveis):');
-  if (!senha) return;
-  if (senha !== 'tds_1992') return alert('Senha incorreta.');
-  excluirCadastro(id);
-}
+/* excluir com senha */
 function excluirCadastro(id){
+  const pwd = prompt('Senha para excluir cadastro:');
+  if (pwd !== 'tds_1992') { alert('Senha incorreta. Exclusão cancelada.'); return; }
+  if(!confirm('Excluir cadastro permanentemente?')) return;
   cadastros = cadastros.filter(c => c.id !== id);
   saveCadastros();
   renderHistorico();
   renderMarketingList();
-}
-
-/* imprimir QR individual */
-function imprimirQrIndividual(id){
-  const c = cadastros.find(x => x.id === id);
-  if (!c) return alert('Cadastro não encontrado.');
-  QRCode.toDataURL(String(c.id), { width:400 }).then(url => {
-    const w = window.open('', '_blank');
-    w.document.write(`<html><body style="text-align:center"><h3>${escapeHtml(c.nome)}</h3><img src="${url}" style="max-width:60%"><div>ID: ${c.id}</div></body></html>`);
-    w.document.close();
-    setTimeout(()=> w.print(), 400);
-  });
 }
 
 /* imprimir ficha */
@@ -428,7 +410,6 @@ function imprimirFicha(id){
   const html = `<html><head><meta charset="utf-8"><title>Ficha - ${escapeHtml(c.nome)}</title>
       <style>body{font-family:Arial;padding:16px}</style></head><body>
       <h2>${escapeHtml(c.nome)}</h2>
-      <div>Tipo ingresso: ${escapeHtml(c.tipoIngresso || '-')}</div>
       <div>Idade: ${escapeHtml(c.idade)}</div>
       <div>Nascido em: ${escapeHtml(c.dataNascimento)}</div>
       <div>Setor: ${escapeHtml(c.setor||'-')} | Mesa: ${escapeHtml(c.mesa||'-')}</div>
@@ -443,7 +424,7 @@ function imprimirFicha(id){
   setTimeout(()=> w.print(), 500);
 }
 
-/* registrar entrada/saída */
+/* registrar entrada/saída with operator and exit protection */
 function registrarEntradaSaida(id, operatorNameOverride=null){
   const c = cadastros.find(x => x.id === id);
   if(!c){ alert('Cadastro não encontrado'); return; }
@@ -555,7 +536,9 @@ function handleScannedPayload(payload){
   if (c.saiSozinho !== 'sim') {
     // pulseira vermelha or yellow (if not allowed) => block and show contact options
     alert(`${c.nome} NÃO está autorizado a sair sozinho. A saída foi bloqueada.`);
+    // show contact options immediately
     contactResponsibleOptions(c);
+    // record blocked attempt
     c.saidas = c.saidas || [];
     c.saidas.push({ ts: nowISO(), operator: currentOperator || 'Operador', blocked: true });
     saveCadastros(); renderHistorico(); renderMarketingList();
@@ -569,16 +552,25 @@ function handleScannedPayload(payload){
   }
 }
 
-/* manual register */
+/* manual register (botão "Entrada / Saída" manual) */
 if (btnRegistrarManual) btnRegistrarManual.addEventListener('click', () => {
+  // Button simply triggers the manual flow. Historically it expected user to type an identifier in busca.
+  // We'll open a prompt for ID (to be consistent) — but preserve historical behavior: ask operator name inside registrarEntradaSaida.
   const termo = inputBusca ? inputBusca.value.trim() : '';
-  if (!termo) { alert('Digite nome/telefone/pulseira no campo de busca para registrar manualmente.'); return; }
+  if (!termo) {
+    const manualId = prompt('Digite o ID da pulseira (ex: 1623456789123) para registrar manualmente:');
+    if (!manualId) return;
+    const found = cadastros.find(c => c.id === manualId || (c.telefone || '').includes(manualId) || (c.nome||'').toLowerCase().includes(manualId.toLowerCase()));
+    if (!found) { alert('Nenhum cadastro encontrado para: ' + manualId); return; }
+    registrarEntradaSaida(found.id);
+    return;
+  }
   const found = cadastros.find(c => (c.nome||'').toLowerCase().includes(termo.toLowerCase()) || (c.telefone||'').includes(termo) || (c.id||'').includes(termo));
   if (!found) { alert('Nenhum cadastro encontrado para: ' + termo); return; }
   registrarEntradaSaida(found.id);
 });
 
-/* imprimir lista (botão geral) */
+/* imprimir lista (botão geral, se necessário) */
 const btnImprimir = $('#btnImprimir');
 if (btnImprimir) btnImprimir.addEventListener('click', () => {
   if (!cadastros.length){ alert('Nenhum cadastro para imprimir'); return; }
@@ -747,29 +739,21 @@ function formatDateBr(iso){
   return d.toLocaleDateString();
 }
 
-function buildReportHTML(list, periodLabel, observacoes){
+function buildReportHTML(list, periodLabel){
   const total = list.length;
-  // counts per ingresso
-  const counts = { inteira:0, meia:0, cortesia:0 };
-  list.forEach(c => {
-    const t = c.tipoIngresso || 'inteira';
-    counts[t] = (counts[t]||0) + 1;
-  });
-  const bruto = counts.inteira * VALORES.inteira + counts.meia * VALORES.meia + counts.cortesia * VALORES.cortesia;
-  // per day grouping (counts)
+  // group counts by day
   const byDay = {};
+  let bruto = 0;
   list.forEach(c => {
     const day = toDateOnly(c.createdAt) || 'unknown';
-    byDay[day] = byDay[day] || { total:0, inteira:0, meia:0, cortesia:0 };
-    byDay[day].total++;
-    const t = c.tipoIngresso || 'inteira';
-    byDay[day][t] = (byDay[day][t] || 0) + 1;
+    byDay[day] = (byDay[day] || 0) + 1;
+    // faturamento: inteira 35.90, meia 17.95, cortesia 0
+    if (c.tipoIngresso === 'inteira') bruto += 35.90;
+    else if (c.tipoIngresso === 'meia') bruto += 17.95;
   });
   let perDayHtml = '';
   Object.keys(byDay).sort().forEach(day => {
-    const d = byDay[day];
-    const dayBruto = (d.inteira * VALORES.inteira) + (d.meia * VALORES.meia);
-    perDayHtml += `<div><strong>${day}</strong> — Total: ${d.total} (Inteira: ${d.inteira}, Meia: ${d.meia}, Cortesia: ${d.cortesia}) — Valor dia: R$ ${dayBruto.toFixed(2)}</div>`;
+    perDayHtml += `<div><strong>${day}</strong> — ${byDay[day]} crianças</div>`;
   });
 
   let html = `<div id="relatorioPrint" class="report-wrapper">
@@ -778,22 +762,29 @@ function buildReportHTML(list, periodLabel, observacoes){
       <img src="assets/icons/icon-512.png" alt="logo" />
       <div>
         <div class="report-title">Relatório – Terra do Sol – Parquinho Infantil</div>
-        <div class="report-meta">Período: ${periodLabel}</div>
+        <div class="report-meta">Período selecionado: ${periodLabel}</div>
         <div class="report-meta">Crianças registradas: <strong>${total}</strong></div>
+        <div class="report-meta">Valor bruto do período: <strong>R$ ${bruto.toFixed(2)}</strong></div>
       </div>
     </div>
 
     <div style="margin-top:12px">${perDayHtml}</div>
 
-    <div style="margin-top:12px"><strong>Resumo de vendas</strong>
-      <div>Inteiras: ${counts.inteira} × R$ ${VALORES.inteira.toFixed(2)} = R$ ${(counts.inteira * VALORES.inteira).toFixed(2)}</div>
-      <div>Meias: ${counts.meia} × R$ ${VALORES.meia.toFixed(2)} = R$ ${(counts.meia * VALORES.meia).toFixed(2)}</div>
-      <div>Cortesia: ${counts.cortesia} (R$ 0,00)</div>
-      <div style="margin-top:6px"><strong>VALOR BRUTO DO PERÍODO: R$ ${bruto.toFixed(2)}</strong></div>
-    </div>
+    <table class="report-table" style="margin-top:12px">
+      <thead><tr><th>Nome</th><th>Idade</th><th>Setor</th><th>Pulseira</th></tr></thead>
+      <tbody>`;
 
-    <div style="margin-top:12px"><strong>Observações / Demandas:</strong><div>${escapeHtml(observacoes || '')}</div></div>
-  </div>`;
+  list.forEach(c => {
+    const pulseira = (c.saiSozinho === 'sim') ? 'VERDE' : (c.altura === 'maior' ? 'AMARELA' : 'VERMELHA');
+    html += `<tr>
+      <td>${escapeHtml(c.nome)}</td>
+      <td>${escapeHtml(c.idade)}</td>
+      <td>${escapeHtml(c.setor||'-')}</td>
+      <td>${pulseira}</td>
+    </tr>`;
+  });
+
+  html += `</tbody></table></div>`;
   return { html, bruto };
 }
 
@@ -820,57 +811,48 @@ function attachPrintFilterEvents(){
     }
   });
 
-  if (btnFiltrar) btnFiltrar.addEventListener('click', () => {
+  btnFiltrar.addEventListener('click', () => {
     const from = filterFrom.value;
     const to = filterTo.value || from;
     if (!from) return alert('Escolha a data inicial.');
     const list = filtrarPorPeriodo(from, to);
     const periodLabel = (from === to) ? formatDateBr(from) : `${formatDateBr(from)} → ${formatDateBr(to)}`;
-    const obs = (impressaoObservacoes && impressaoObservacoes.value) || '';
-    const res = buildReportHTML(list, periodLabel, obs);
+    const res = buildReportHTML(list, periodLabel);
     relatorioPreview.innerHTML = res.html;
-    faturamentoResumo.innerHTML = `<strong>VALOR BRUTO DO PERÍODO: R$ ${res.bruto.toFixed(2)}</strong>`;
+    faturamentoResumo.innerHTML = `<strong>Valor bruto do período:</strong> R$ ${res.bruto.toFixed(2)}<br><strong>Observações:</strong> ${escapeHtml(impressaoObservacoes.value||'-')}`;
   });
 
-  if (btnImprimirFiltro) btnImprimirFiltro.addEventListener('click', () => {
+  btnImprimirFiltro.addEventListener('click', () => {
     const from = filterFrom.value;
     const to = filterTo.value || from;
     if (!from) return alert('Escolha a data inicial para imprimir.');
     const list = filtrarPorPeriodo(from, to);
     const periodLabel = (from === to) ? formatDateBr(from) : `${formatDateBr(from)} → ${formatDateBr(to)}`;
-    const obs = (impressaoObservacoes && impressaoObservacoes.value) || '';
-    const res = buildReportHTML(list, periodLabel, obs);
+    const res = buildReportHTML(list, periodLabel);
+    const reportHtml = res.html + `<div style="margin-top:12px"><strong>Observações:</strong> ${escapeHtml(impressaoObservacoes.value||'-')}</div>`;
     const w = window.open('','_blank');
     w.document.write(`<html><head><meta charset="utf-8"><title>Relatório</title>
       <style>body{font-family:Arial;padding:18px} table{width:100%;border-collapse:collapse} th,td{border:1px solid #ddd;padding:8px}</style>
-      </head><body>${res.html}</body></html>`);
+      </head><body>${reportHtml}</body></html>`);
     w.document.close();
     setTimeout(()=> w.print(), 500);
   });
 
-  // botão voltar impressão: volta para a aba cadastro
+  // botão voltar impressão: volta para a aba cadastro (sem criar print.html)
   if (btnVoltarImpressao) btnVoltarImpressao.addEventListener('click', () => {
     document.querySelector('nav button[data-tab="cadastro"]').click();
   });
 }
 
-/* ---------- Filtro do Histórico ---------- */
-if (btnFilterHistorico) btnFilterHistorico.addEventListener('click', () => {
-  const from = histFrom.value;
-  const to = histTo.value || from;
-  if (!from) return alert('Escolha a data inicial.');
-  renderHistorico({ from, to });
-});
-if (btnResetHistorico) btnResetHistorico.addEventListener('click', () => {
-  histFrom.value = ''; histTo.value = '';
-  renderHistorico();
-});
+/* ---------- FUNÇÕES DE EDIÇÃO (nova) ---------- */
 
-/* ---------- EDIÇÃO: abrirEdicao ---------- */
 function abrirEdicao(id){
   const c = cadastros.find(x => x.id === id);
   if (!c) { alert('Cadastro não encontrado para edição'); return; }
+
   idEmEdicao = id;
+
+  // preencher o formulário com os campos existentes (se existirem)
   try {
     if (form.elements['tipoIngresso']) form.elements['tipoIngresso'].value = c.tipoIngresso || 'inteira';
     if (form.elements['nome']) form.elements['nome'].value = c.nome || '';
@@ -889,8 +871,10 @@ function abrirEdicao(id){
   } catch(e){
     console.warn('Erro ao preencher form para edição', e);
   }
+
   alergiaLabel.style.display = (c.temAlergia === 'sim') ? 'block' : 'none';
   updateLiveBadge();
+
   // ir para a aba Cadastro
   document.querySelector("nav button.active")?.classList.remove("active");
   document.querySelector("nav button[data-tab='cadastro']")?.classList.add("active");
@@ -898,4 +882,4 @@ function abrirEdicao(id){
   document.getElementById("cadastro").classList.add("active");
 }
 
-/* end of file */
+/* ---------- FIM EDIÇÃO ---------- */
