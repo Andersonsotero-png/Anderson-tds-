@@ -12,44 +12,168 @@
 }
 
 *{box-sizing:border-box}
-body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial;margin:0;background:var(--bg);color:#222}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial;
+  margin:0;
+  background:var(--bg);
+  color:#222;
+}
 
-header{background:linear-gradient(90deg,var(--teal-light) 0%,var(--orange-strong) 100%);color:var(--white);padding:12px 16px}
-.brand{display:flex;align-items:center;gap:12px;justify-content:center}
-.brand img{width:44px;height:44px;border-radius:8px;background:var(--white);padding:4px;object-fit:cover}
-header h1{margin:0;font-size:1.25rem;font-weight:700}
+header{
+  background:linear-gradient(90deg,var(--teal-light) 0%,var(--orange-strong) 100%);
+  color:var(--white);
+  padding:12px 16px;
+}
 
-nav{display:flex;justify-content:center;gap:6px;margin-top:8px}
-nav button{background:transparent;color:rgba(255,255,255,0.95);border:2px solid rgba(255,255,255,0.12);padding:8px 12px;border-radius:10px;font-weight:600;cursor:pointer}
-nav button.active{background:rgba(255,255,255,0.12);box-shadow:0 2px 6px rgba(0,0,0,0.08)}
+.brand{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  justify-content:center;
+}
 
-main{max-width:980px;margin:18px auto;padding:12px}
+.brand img{
+  width:44px;
+  height:44px;
+  border-radius:8px;
+  background:var(--white);
+  padding:4px;
+  object-fit:cover;
+}
+
+header h1{
+  margin:0;
+  font-size:1.25rem;
+  font-weight:700;
+}
+
+nav{
+  display:flex;
+  justify-content:center;
+  gap:6px;
+  margin-top:8px;
+}
+
+nav button{
+  background:transparent;
+  color:rgba(255,255,255,0.95);
+  border:2px solid rgba(255,255,255,0.12);
+  padding:8px 12px;
+  border-radius:10px;
+  font-weight:600;
+  cursor:pointer;
+}
+
+nav button.active{
+  background:rgba(255,255,255,0.12);
+  box-shadow:0 2px 6px rgba(0,0,0,0.08);
+}
+
+main{
+  max-width:980px;
+  margin:18px auto;
+  padding:12px;
+}
+
 .tab{display:none}
 .tab.active{display:block}
 
-.card{background:var(--card);border-radius:var(--radius);padding:10px;border:1px solid #eee;margin-bottom:12px}
+.card{
+  background:var(--card);
+  border-radius:var(--radius);
+  padding:10px;
+  border:1px solid #eee;
+  margin-bottom:12px;
+}
 
-form label{display:block;margin:8px 0;font-weight:600}
-form input, form textarea, form select{width:100%;padding:10px;border-radius:8px;border:1px solid #e6e6e6;background:#fff;margin-top:6px}
+form label{
+  display:block;
+  margin:8px 0;
+  font-weight:600;
+}
 
-textarea{min-height:80px;resize:vertical}
+form input, form textarea, form select{
+  width:100%;
+  padding:10px;
+  border-radius:8px;
+  border:1px solid #e6e6e6;
+  background:#fff;
+  margin-top:6px;
+}
 
-.row{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;align-items:center}
+textarea{
+  min-height:80px;
+  resize:vertical;
+}
+
+.row{
+  display:flex;
+  gap:8px;
+  margin-top:12px;
+  flex-wrap:wrap;
+  align-items:center;
+}
+
 .row button { margin-bottom: 8px; }
 
-button{background:var(--orange-strong);color:var(--white);border:none;padding:8px 10px;border-radius:8px;cursor:pointer;font-weight:700}
-button.secondary{background:var(--teal-light)}
+button{
+  background:var(--orange-strong);
+  color:var(--white);
+  border:none;
+  padding:8px 10px;
+  border-radius:8px;
+  cursor:pointer;
+  font-weight:700;
+}
 
-#qrCodeCadastro{margin-top:12px;display:flex;gap:8px;flex-wrap:wrap}
-#videoWrap{max-width:420px;margin-top:12px;border-radius:8px;overflow:hidden}
-#video{width:100%;height:auto;background:#000;display:block}
-#inputBusca{padding:10px;border-radius:8px;border:1px solid #ddd;width:100%;margin-bottom:8px}
-#listaBusca li{list-style:none;margin-bottom:8px}
+button.secondary{
+  background:var(--teal-light);
+}
 
-/* LISTA DE MARKETING */
-#marketingList {
-  max-height: 500px;
-  overflow-y: auto;
+.card .row button, 
+.contact-actions button{
+  padding:6px 8px;
+  border-radius:6px;
+  font-weight:700;
+  border:1px solid rgba(0,0,0,0.06);
+}
+
+#qrCodeCadastro{
+  margin-top:12px;
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+}
+
+#videoWrap{
+  max-width:420px;
+  margin-top:12px;
+  border-radius:8px;
+  overflow:hidden;
+}
+
+#video{
+  width:100%;
+  height:auto;
+  background:#000;
+  display:block;
+}
+
+#inputBusca{
+  padding:10px;
+  border-radius:8px;
+  border:1px solid #ddd;
+  width:100%;
+  margin-bottom:8px;
+}
+
+#listaBusca li{
+  list-style:none;
+  margin-bottom:8px;
+}
+
+#listaHistoricoContainer .card{
+  margin-bottom:10px;
 }
 
 #marketingList .contact-row{
@@ -57,65 +181,87 @@ button.secondary{background:var(--teal-light)}
   align-items:center;
   gap:10px;
   padding:8px;
-  border-bottom:1px solid #f0f0f0
+  border-bottom:1px solid #f0f0f0;
 }
 
-.contact-meta{flex:1}
+.contact-meta{
+  flex:1;
+}
 
-/* BOTÕES DA ABA MARKETING */
-.btn-small{
+/* ------------------------------
+   🎨 BOTÕES DO MARKETING (CORRIGIDOS)
+   ------------------------------ */
+
+/* LIGAR, WHATSAPP, SMS, E-MAIL → LARANJA */
+.contact-actions .btn-small {
+  background: var(--orange-strong) !important;
+  color: white !important;
+  border: none !important;
+  border-radius: 10px !important;
+  padding: 10px 14px !important;
+  font-weight: 700 !important;
+  display: block !important;
+  width: 140px !important;
+  text-align: center;
+  margin-bottom: 6px !important;
+}
+
+/* SALVAR (.VCF) → VERDE-AZULADO */
+.contact-actions .btn-vcf {
+  background: var(--teal-light) !important;
+  color: white !important;
+  border: none !important;
+  border-radius: 10px !important;
+  padding: 10px 14px !important;
+  font-weight: 700 !important;
+  display: block !important;
+  width: 140px !important;
+  text-align: center;
+  margin-bottom: 6px !important;
+}
+
+.badge{
+  display:inline-block;
   padding:6px 10px;
   border-radius:6px;
+  color:#fff;
   font-weight:700;
-  cursor:pointer;
-  background:var(--orange-strong) !important;
-  color:white !important;
-  border:none !important;
 }
 
-.btn-small:hover{
-  opacity:0.85;
-}
-
-/* BOTÃO VCF – verde azulado */
-.btn-vcf{
-  background:var(--teal-light) !important;
-  color:white !important;
-  border:none !important;
-}
-
-/* BADGES */
-.badge{display:inline-block;padding:6px 10px;border-radius:6px;color:#fff;font-weight:700}
 .badge.green{background:var(--green)}
 .badge.red{background:var(--red)}
 .badge.yellow{background:var(--yellow);color:#333}
 
-#btnScanNow{background:#0066cc;color:#fff}
+#btnScanNow{
+  background:#0066cc;
+  color:#fff;
+}
 
 @media(min-width:900px){
   main{padding:24px}
   nav{gap:12px}
 }
 
-/* spacing between adjacent buttons */
-button + button { margin-left: 6px; }
+button + button {
+  margin-left: 6px;
+}
 
-/* PRINT SETTINGS */
 @media print {
   body * { visibility: hidden; }
   #relatorioPrint, #relatorioPrint * { visibility: visible; }
   #relatorioPrint { position: absolute; left: 0; top: 0; width: 100%; }
 }
 
-/* WATERMARK */
 .report-wrapper{
   position: relative;
   padding: 18px;
   min-height: 200px;
 }
+
 .report-watermark{
   position: absolute;
-  left: 50%; top: 50%;
+  left: 50%;
+  top: 50%;
   transform: translate(-50%,-50%);
   opacity: 0.08;
   pointer-events: none;
@@ -123,13 +269,41 @@ button + button { margin-left: 6px; }
   max-width: 500px;
 }
 
-.report-header{display:flex;align-items:center;gap:12px}
-.report-header img{width:80px;height:auto}
-.report-title{font-size:1.1rem;font-weight:700}
-.report-meta{margin-top:6px;color:var(--muted)}
+.report-header{
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
 
-.report-table{width:100%;border-collapse:collapse;margin-top:12px}
-.report-table th, .report-table td{border:1px solid #ddd;padding:8px;text-align:left;font-size:13px}
+.report-header img{
+  width:80px;
+  height:auto;
+}
 
-/* pequenos */
-.small-muted{color:var(--muted);font-size:13px}
+.report-title{
+  font-size:1.1rem;
+  font-weight:700;
+}
+
+.report-meta{
+  margin-top:6px;
+  color:var(--muted);
+}
+
+.report-table{
+  width:100%;
+  border-collapse:collapse;
+  margin-top:12px;
+}
+
+.report-table th, .report-table td{
+  border:1px solid #ddd;
+  padding:8px;
+  text-align:left;
+  font-size:13px;
+}
+
+.small-muted{
+  color:var(--muted);
+  font-size:13px;
+}
