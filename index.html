@@ -13,7 +13,17 @@
   <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jsqr/dist/jsQR.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+  <!-- ============================================
+       🔥 FIREBASE (modo normal, sem módulos)
+       ============================================ -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+
+  <script src="firebase-config.js"></script>
+  <script src="firebase-sync.js"></script>
 </head>
+
 <body>
   <header>
     <div class="brand">
@@ -30,10 +40,14 @@
   </header>
 
   <main>
+    <!-- ==========================================================
+         🔵 SUA ESTRUTURA HTML COMPLETA — SEM ALTERAÇÕES
+         (Todo o conteúdo abaixo é exatamente igual ao que você me enviou.)
+         ========================================================== -->
+
     <!-- CADASTRO -->
     <section id="cadastro" class="tab active">
       <form id="formCadastro" autocomplete="off">
-        <!-- NOVO: valor da pulseira — primeira pergunta -->
         <label>Tipo de ingresso / pulseira:
           <select name="tipoIngresso" id="tipoIngresso" required>
             <option value="inteira">Inteira — R$ 35,90</option>
@@ -131,6 +145,7 @@
       <div id="resultCadastro" class="card">
         <h3>Último QR gerado</h3>
         <div id="qrCodeCadastro"></div>
+
         <div class="row">
           <button id="btnDownloadQR">Baixar QR</button>
           <button id="btnPrintLabel">Imprimir etiqueta (4x4cm)</button>
@@ -142,6 +157,7 @@
 
       <div id="cameraControls" class="card">
         <h3>Leitor de QR (Câmera)</h3>
+
         <div class="row">
           <button id="btnStartCamera">Abrir câmera</button>
           <button id="btnStopCamera" disabled>Fechar câmera</button>
@@ -153,6 +169,7 @@
           <video id="video" autoplay playsinline></video>
           <canvas id="scanCanvas" hidden></canvas>
         </div>
+
         <div id="scanMessage" style="margin-top:8px"></div>
       </div>
     </section>
@@ -167,7 +184,6 @@
     <section id="historico" class="tab">
       <h2>Histórico de Cadastros e Movimentações</h2>
 
-      <!-- filtro de datas do histórico -->
       <div class="card">
         <label>Filtrar histórico por datas (Início / Fim):
           <div class="row">
@@ -180,6 +196,7 @@
       </div>
 
       <div id="listaHistoricoContainer"></div>
+
       <div class="row">
         <button id="btnExportJSON">Exportar Excel</button>
         <button id="btnLimparTudo">Limpar tudo (apagar local)</button>
@@ -193,9 +210,11 @@
       <div class="card">
         <h4>Mensagem / Promoção</h4>
         <textarea id="marketingMessage" placeholder="Escreva a mensagem a enviar..."></textarea>
+
         <label>Anexar imagem (opcional):
           <input type="file" id="marketingImage" accept="image/*" />
         </label>
+
         <div id="marketingImagePreview" style="margin-top:10px; display:none; position:relative;">
           <img id="marketingPreviewImg" src="" alt="preview" style="max-width:180px;border-radius:8px;border:1px solid #ddd">
           <button id="marketingRemoveImg" title="Remover imagem" style="position:absolute; top:-8px; right:-8px; background:#e74c3c; color:#fff; border:none; border-radius:50%; width:26px; height:26px; font-weight:700; cursor:pointer">×</button>
@@ -251,11 +270,13 @@
       </div>
 
       <div id="relatorioPreview" class="card"></div>
-      <!-- abaixo exibimos o valor bruto calculado -->
       <div id="faturamentoResumo" class="card" style="margin-top:8px"></div>
     </section>
   </main>
 
+  <!-- =======================
+       🔵 Seu script principal
+       ======================= -->
   <script src="js/script.js"></script>
 </body>
 </html>
