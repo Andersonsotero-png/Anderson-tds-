@@ -1,4 +1,4 @@
-// script.js — Versão final solicitada (com as alterações pedidas)
+// script.js — Versão final solicitada (alterações: histórico top, permanência Opção A, VCF, etc.)
 
 // utilitários
 const $ = s => document.querySelector(s);
@@ -137,6 +137,14 @@ updateLiveBadge();
 
 /* persistence */
 function saveCadastros(){ localStorage.setItem('cadastros', JSON.stringify(cadastros)); }
+
+/* helper: traz cadastro para o topo do array (mais recente em cima) */
+function bringToTop(id){
+  const idx = cadastros.findIndex(c => c.id === id);
+  if (idx === -1) return;
+  const [item] = cadastros.splice(idx,1);
+  cadastros.unshift(item);
+}
 
 /* form submit (criar ou salvar edição) */
 if (form) {
@@ -372,8 +380,9 @@ function renderHistorico(filteredList = null){
   if (!list.length){ listaHistoricoContainer.textContent = 'Nenhum cadastro ainda.'; return; }
   list.forEach(c => {
     const div = document.createElement('div'); div.className='card';
-    const entradasList = (c.entradas||[]).map(t => `${new Date(t.ts).toLocaleString()} — ${escapeHtml(t.operator||'')}`).join('<br>') || '-';
-    const saidasList = (c.saidas||[]).map(t => `${new Date(t.ts).toLocaleString()} — ${escapeHtml(t.operator||'')}`).join('<br>') || '-';
+    // mostrar eventos do mais novo para o mais antigo
+    const entradasList = (c.entradas||[]).slice().reverse().map(t => `${new Date(t.ts).toLocaleString()} — ${escapeHtml(t.operator||'')}`).join('<br>') || '-';
+    const saidasList = (c.saidas||[]).slice().reverse().map(t => `${new Date(t.ts).toLocaleString()} — ${escapeHtml(t.operator||'')}${t.blocked? ' (BLOQUEADA)':''}`).join('<br>') || '-';
     const tipoLabel = (c.tipoIngresso === 'inteira') ? 'Inteira' : (c.tipoIngresso === 'meia' ? `Meia (${c.meiaMotivo||'-'})` : 'Cortesia');
     const badgeHTML = `<span class="badge ${getBadgeClass(c)}">${getBadgeText(c)}</span>`;
     div.innerHTML = `<strong>${escapeHtml(c.nome)}</strong> <small>${escapeHtml(c.idade)} anos</small>
@@ -437,6 +446,9 @@ function excluirCadastro(id){
 function imprimirFicha(id){
   const c = cadastros.find(x => x.id === id);
   if(!c){ alert('Cadastro não encontrado'); return; }
+  const entradasHtml = (c.entradas||[]).map(t => new Date(t.ts).toLocaleString()+" — "+escapeHtml(t.operator||'')).join('<br>') || '-';
+  const saidasHtml = (c.saidas||[]).map(t => new Date(t.ts).toLocaleString()+" — "+escapeHtml(t.operator||'') + (t.blocked ? ' (BLOQUEADA)' : '')).join('<br>') || '-';
+  const permanencia = formatDuration(getTotalPermanenceSeconds(c));
   const w = window.open('', '_blank');
   const html = `<html><head><meta charset="utf-8"><title>Ficha - ${escapeHtml(c.nome)}</title>
       <style>body{font-family:Arial;padding:16px}</style></head><body>
@@ -448,13 +460,52 @@ function imprimirFicha(id){
       <div>Setor: ${escapeHtml(c.setor||'-')} | Mesa: ${escapeHtml(c.mesa||'-')}</div>
       <div>Alergia: ${(c.temAlergia === 'sim') ? (escapeHtml(c.qualAlergia) || 'Sim') : 'Não'}</div>
       <div>Responsável: ${escapeHtml(c.responsavel || '-') } | Tel: ${escapeHtml(c.telefone || '-')}</div>
+      <div><strong>Tempo de permanência (total):</strong> ${permanencia}</div>
       <hr>
-      <div><strong>Entradas:</strong><br>${(c.entradas||[]).map(t => new Date(t.ts).toLocaleString()+" — "+escapeHtml(t.operator||'')).join('<br>') || '-'}</div>
-      <div><strong>Saídas:</strong><br>${(c.saidas||[]).map(t => new Date(t.ts).toLocaleString()+" — "+escapeHtml(t.operator||'')).join('<br>') || '-'}</div>
+      <div><strong>Entradas:</strong><br>${entradasHtml}</div>
+      <div><strong>Saídas:</strong><br>${saidasHtml}</div>
       </body></html>`;
   w.document.write(html);
   w.document.close();
   setTimeout(()=> w.print(), 500);
+}
+
+/* calcula total de permanência em segundos (Opção A — mesmo dia) */
+function getTotalPermanenceSeconds(c){
+  let total = 0;
+  const entradas = (c.entradas || []).slice();
+  const saidas = (c.saidas || []).slice();
+  const pairs = Math.min(entradas.length, saidas.length);
+  for (let i = 0; i < pairs; i++) {
+    const inTs = new Date(entradas[i].ts);
+    const outTs = new Date(saidas[i].ts);
+    // ignorar saidas bloqueadas
+    if (saidas[i].blocked) continue;
+    if (!isNaN(inTs) && !isNaN(outTs)) {
+      // se quiser garantir mesmo dia, verificar mesma data:
+      if (inTs.toISOString().slice(0,10) === outTs.toISOString().slice(0,10)) {
+        total += Math.max(0, (outTs - inTs) / 1000);
+      } else {
+        // Opção A assume mesmo dia — se diferente, tenta somar diferença positiva
+        total += Math.max(0, (outTs - inTs) / 1000);
+      }
+    }
+  }
+  // se existe entrada sem saída — está dentro; soma até agora
+  if ((entradas.length > saidas.length) && entradas.length > 0) {
+    const lastIn = new Date(entradas[entradas.length - 1].ts);
+    if (!isNaN(lastIn)) {
+      total += Math.max(0, (Date.now() - lastIn.getTime()) / 1000);
+    }
+  }
+  return Math.floor(total);
+}
+function formatDuration(totalSeconds){
+  if (!totalSeconds || totalSeconds <= 0) return '00:00';
+  const hrs = Math.floor(totalSeconds / 3600);
+  const mins = Math.floor((totalSeconds % 3600) / 60);
+  if (hrs > 0) return `${String(hrs).padStart(2,'0')}:${String(mins).padStart(2,'0')}`;
+  return `${String(mins).padStart(2,'0')}:${String(Math.floor(totalSeconds % 60)).padStart(2,'0')}`;
 }
 
 /* registrar entrada/saída with operator and exit protection */
@@ -484,7 +535,11 @@ function registrarEntradaSaida(id, operatorNameOverride=null){
       alert(`Saída registrada para ${c.nome} — Operador: ${operator}`);
     }
   }
-  saveCadastros(); renderHistorico(); renderMarketingList();
+  // mover cadastro para topo do histórico e salvar
+  bringToTop(c.id);
+  saveCadastros();
+  renderHistorico();
+  renderMarketingList();
 }
 
 /* contact options for responsible */
@@ -558,6 +613,7 @@ function handleScannedPayload(payload){
     c.entradas = c.entradas || [];
     c.entradas.push({ ts: nowISO(), operator: currentOperator || 'Operador' });
     c.status = 'dentro';
+    bringToTop(c.id);
     saveCadastros(); renderHistorico(); renderMarketingList();
     alert(`Entrada registrada para ${c.nome} — Operador: ${currentOperator}`);
     return;
@@ -567,11 +623,13 @@ function handleScannedPayload(payload){
     contactResponsibleOptions(c);
     c.saidas = c.saidas || [];
     c.saidas.push({ ts: nowISO(), operator: currentOperator || 'Operador', blocked: true });
+    bringToTop(c.id);
     saveCadastros(); renderHistorico(); renderMarketingList();
   } else {
     c.saidas = c.saidas || [];
     c.saidas.push({ ts: nowISO(), operator: currentOperator || 'Operador' });
     c.status = 'fora';
+    bringToTop(c.id);
     saveCadastros(); renderHistorico(); renderMarketingList();
     alert(`Saída registrada para ${c.nome} — Operador: ${currentOperator}`);
   }
@@ -723,11 +781,6 @@ if (btnLimparTudo) btnLimparTudo.addEventListener('click', () => {
   alert('Dados apagados.');
 });
 
-/* Service worker (se existir) */
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('./service-worker.js').then(()=> console.log('SW registrado')).catch(e=>console.warn('SW erro', e));
-}
-
 /* init */
 (function init(){
   cadastros = cadastros.map(c => ({ entradas: c.entradas || [], saidas: c.saidas || [], status: c.status || 'fora', createdAt: c.createdAt || nowISO(), ...c }));
@@ -806,17 +859,19 @@ function buildReportHTML(list, periodLabel, observacoesText){
     <div style="margin-top:12px">${perDayHtml}</div>
 
     <table class="report-table" style="margin-top:12px">
-      <thead><tr><th>Nome</th><th>Idade</th><th>Setor</th><th>Pulseira</th></tr></thead>
+      <thead><tr><th>Nome</th><th>Idade</th><th>Setor</th><th>Pulseira</th><th>Tempo</th></tr></thead>
       <tbody>`;
 
   list.forEach(c => {
     const pulseira = (c.saiSozinho === 'sim') ? 'VERDE' : (c.altura === 'maior' ? 'AMARELA' : 'VERMELHA');
     const tipoLabel = (c.tipoIngresso === 'inteira') ? 'Inteira' : (c.tipoIngresso === 'meia' ? `Meia (${c.meiaMotivo||'-'})` : 'Cortesia');
+    const tempo = formatDuration(getTotalPermanenceSeconds(c));
     html += `<tr>
       <td>${escapeHtml(c.nome)}</td>
       <td>${escapeHtml(c.idade)}</td>
       <td>${escapeHtml(c.setor||'-')}</td>
       <td>${pulseira} • ${tipoLabel}</td>
+      <td>${tempo}</td>
     </tr>`;
   });
 
