@@ -196,9 +196,16 @@
         <label>Anexar imagem (opcional):
           <input type="file" id="marketingImage" accept="image/*" />
         </label>
-        <div class="row">
+        <div id="marketingImagePreview" style="margin-top:10px; display:none; position:relative;">
+          <img id="marketingPreviewImg" src="" alt="preview" style="max-width:180px;border-radius:8px;border:1px solid #ddd">
+          <button id="marketingRemoveImg" title="Remover imagem" style="position:absolute; top:-8px; right:-8px; background:#e74c3c; color:#fff; border:none; border-radius:50%; width:26px; height:26px; font-weight:700; cursor:pointer">×</button>
+        </div>
+
+        <div class="row" style="margin-top:10px">
           <button id="btnSelectAll">Selecionar todos</button>
           <button id="btnClearAll">Limpar seleção</button>
+          <button id="btnSaveSelectedVCF">Salvar selecionados (.vcf)</button>
+          <button id="btnSaveAllVCF" class="secondary">Salvar TODOS (.vcf)</button>
           <button id="btnSendToSelected">Enviar para selecionados</button>
         </div>
       </div>
