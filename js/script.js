@@ -609,17 +609,22 @@ function renderMarketingList(){
   if (!marketingList) return;
   marketingList.innerHTML = '';
   if (!cadastros.length) { marketingList.textContent = 'Nenhum contato cadastrado.'; return; }
-  cadastros.forEach(c => {
+  cadastros.forEach((c, idx) => {
     const row = document.createElement('div'); row.className = 'contact-row';
     const chk = document.createElement('input'); chk.type = 'checkbox'; chk.dataset.id = c.id;
     const meta = document.createElement('div'); meta.className = 'contact-meta';
     meta.innerHTML = `<strong>${escapeHtml(c.nome)}</strong><br><small>Tel: ${escapeHtml(c.telefone||'-')} • Email: ${escapeHtml(c.email||'-')} • Mesa: ${escapeHtml(c.mesa||'-')}</small>`;
     const actions = document.createElement('div'); actions.className = 'contact-actions';
-    const telBtn = document.createElement('button'); telBtn.textContent='Ligar'; telBtn.addEventListener('click', ()=> window.open(`tel:${c.telefone||''}`));
-    const waBtn = document.createElement('button'); waBtn.textContent='WhatsApp'; waBtn.addEventListener('click', ()=> openWhatsApp(c.telefone));
-    const smsBtn = document.createElement('button'); smsBtn.textContent='SMS'; smsBtn.addEventListener('click', ()=> openSMS(c.telefone, ''));
-    const mailBtn = document.createElement('button'); mailBtn.textContent='E-mail'; mailBtn.addEventListener('click', ()=> openMail(c.email, 'Promoção', ''));
-    actions.appendChild(telBtn); actions.appendChild(waBtn); actions.appendChild(smsBtn); actions.appendChild(mailBtn);
+
+    const telBtn = document.createElement('button'); telBtn.textContent='Ligar'; telBtn.className='btn-small'; telBtn.addEventListener('click', ()=> window.open(`tel:${c.telefone||''}`));
+    const waBtn = document.createElement('button'); waBtn.textContent='WhatsApp'; waBtn.className='btn-small'; waBtn.addEventListener('click', ()=> openWhatsApp(c.telefone));
+    const smsBtn = document.createElement('button'); smsBtn.textContent='SMS'; smsBtn.className='btn-small'; smsBtn.addEventListener('click', ()=> openSMS(c.telefone, ''));
+    const mailBtn = document.createElement('button'); mailBtn.textContent='E-mail'; mailBtn.className='btn-small'; mailBtn.addEventListener('click', ()=> openMail(c.email, 'Promoção', ''));
+
+    const vcfBtn = document.createElement('button'); vcfBtn.textContent='Salvar (.vcf)'; vcfBtn.className='btn-small btn-vcf'; 
+    vcfBtn.addEventListener('click', ()=> baixarVCFIndividualById(c.id));
+
+    actions.appendChild(telBtn); actions.appendChild(waBtn); actions.appendChild(smsBtn); actions.appendChild(mailBtn); actions.appendChild(vcfBtn);
     row.appendChild(chk); row.appendChild(meta); row.appendChild(actions);
     marketingList.appendChild(row);
   });
@@ -633,6 +638,7 @@ function openWhatsApp(number, text=''){
   if (!number) return alert('Número ausente.');
   const digits = number.replace(/\D/g,'');
   const encoded = encodeURIComponent(text);
+  // abrir conversa com número específico (funciona sem salvar se usar wa.me/número)
   window.open(`https://wa.me/${digits}?text=${encoded}`, '_blank');
 }
 function openSMS(number, body=''){
@@ -728,6 +734,7 @@ if ('serviceWorker' in navigator) {
   renderHistorico();
   renderMarketingList();
   attachPrintFilterEvents();
+  attachMarketingImageHandlers();
 })();
 
 /* --------- Impressão / Relatórios --------- */
@@ -953,4 +960,122 @@ if (btnResetHistorico) btnResetHistorico.addEventListener('click', () => {
   histFrom.value = ''; histTo.value = ''; renderHistorico();
 });
 
-/* end of file */
+/* ------------------------------
+   ADIÇÕES: VCF + Marketing Image
+   ------------------------------*/
+
+/** Gera string VCF para um cadastro */
+function gerarVCFString(c) {
+  const nome = (c.responsavel && c.responsavel.trim()) ? `${c.responsavel} (Resp.) — ${c.nome}` : c.nome;
+  const tel = c.telefone || '';
+  const email = c.email || '';
+  const noteParts = [];
+  if (c.mesa) noteParts.push(`Mesa: ${c.mesa}`);
+  if (c.setor) noteParts.push(`Setor: ${c.setor}`);
+  if (c.observacoes) noteParts.push(`Obs: ${c.observacoes}`);
+  const note = noteParts.join(' • ');
+  return `BEGIN:VCARD
+VERSION:3.0
+FN:${nome}
+TEL;TYPE=CELL:${tel}
+EMAIL:${email}
+NOTE:${note}
+END:VCARD`;
+}
+
+/** Baixa VCF de um cadastro (por objeto) */
+function baixarVCFIndividualObj(c) {
+  const content = gerarVCFString(c);
+  const blob = new Blob([content], { type: 'text/vcard' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  // safe filename
+  const fname = (c.nome || 'contato').replace(/[^\w\- ]+/g,'').trim();
+  a.download = `${fname}.vcf`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+/** Baixa VCF de um cadastro por id */
+function baixarVCFIndividualById(id){
+  const c = cadastros.find(x => x.id === id);
+  if (!c) return alert('Cadastro não encontrado para VCF.');
+  baixarVCFIndividualObj(c);
+}
+
+/** Baixa VCF com os selecionados (checkboxes) */
+function baixarVCFSelecionados(){
+  const selectedIds = $$('#marketingList input[type="checkbox"]:checked').map(ch => ch.dataset.id);
+  if (!selectedIds.length) return alert('Selecione ao menos um contato.');
+  const contents = selectedIds.map(id => {
+    const c = cadastros.find(x => x.id === id);
+    return c ? gerarVCFString(c) : '';
+  }).filter(Boolean).join('\n');
+  const blob = new Blob([contents], { type: 'text/vcard' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'contatos_parquinho.vcf';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+/** Baixa VCF com todos os cadastros */
+function baixarVCFTodos(){
+  if (!cadastros.length) return alert('Nenhum cadastro para exportar.');
+  const contents = cadastros.map(c => gerarVCFString(c)).join('\n');
+  const blob = new Blob([contents], { type: 'text/vcard' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'todos_contatos_parquinho.vcf';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+/* Marketing image preview & remove */
+function attachMarketingImageHandlers(){
+  const previewWrap = $('#marketingImagePreview');
+  const previewImg = $('#marketingPreviewImg');
+  const removeBtn = $('#marketingRemoveImg');
+
+  if (marketingImage) {
+    marketingImage.addEventListener('change', (ev) => {
+      const file = ev.target.files[0];
+      if (!file) {
+        if (previewWrap) previewWrap.style.display = 'none';
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        if (previewImg) previewImg.src = e.target.result;
+        if (previewWrap) previewWrap.style.display = 'inline-block';
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  if (removeBtn) {
+    removeBtn.addEventListener('click', () => {
+      if (marketingImage) marketingImage.value = '';
+      if (previewImg) previewImg.src = '';
+      if (previewWrap) previewWrap.style.display = 'none';
+    });
+  }
+
+  // hook VCF buttons
+  const btnSaveSelected = $('#btnSaveSelectedVCF');
+  const btnSaveAll = $('#btnSaveAllVCF');
+  if (btnSaveSelected) btnSaveSelected.addEventListener('click', baixarVCFSelecionados);
+  if (btnSaveAll) btnSaveAll.addEventListener('click', baixarVCFTodos);
+}
+
+/* end of additions */
+
+/* Service worker (se existir) */
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./service-worker.js').then(()=> console.log('SW registrado')).catch(e=>console.warn('SW erro', e));
+}
+
+/* Fim do arquivo */
