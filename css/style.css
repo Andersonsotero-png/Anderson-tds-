@@ -6,6 +6,7 @@
   --muted:#6b6b6b;
   --card:#ffffff;
   --radius:8px;
+
   --green:#2ecc71;
   --red:#e74c3c;
   --yellow:#f1c40f;
@@ -20,7 +21,9 @@ body{
   color:#222;
 }
 
+/* -------------------------------------- */
 /* HEADER */
+/* -------------------------------------- */
 header{
   background:linear-gradient(90deg,var(--teal-light) 0%,var(--orange-strong) 100%);
   color:var(--white);
@@ -49,6 +52,9 @@ header h1{
   font-weight:700;
 }
 
+/* -------------------------------------- */
+/* NAVIGATION */
+/* -------------------------------------- */
 nav{
   display:flex;
   justify-content:center;
@@ -71,14 +77,17 @@ nav button.active{
   box-shadow:0 2px 6px rgba(0,0,0,0.08);
 }
 
+/* -------------------------------------- */
+/* LAYOUT */
+/* -------------------------------------- */
 main{
   max-width:980px;
   margin:18px auto;
   padding:12px;
 }
 
-.tab{display:none;}
-.tab.active{display:block;}
+.tab{display:none}
+.tab.active{display:block}
 
 .card{
   background:var(--card);
@@ -88,7 +97,9 @@ main{
   margin-bottom:12px;
 }
 
-/* FORMS */
+/* -------------------------------------- */
+/* FORM */
+/* -------------------------------------- */
 form label{
   display:block;
   margin:8px 0;
@@ -111,6 +122,7 @@ textarea{
   resize:vertical;
 }
 
+/* ROWS */
 .row{
   display:flex;
   gap:8px;
@@ -119,8 +131,8 @@ textarea{
   align-items:center;
 }
 
-.row button {
-  margin-bottom: 8px;
+.row button{
+  margin-bottom:8px;
 }
 
 button{
@@ -137,15 +149,9 @@ button.secondary{
   background:var(--teal-light);
 }
 
-.card .row button,
-.contact-actions button {
-  padding:6px 8px;
-  border-radius:6px;
-  font-weight:700;
-  border:1px solid rgba(0,0,0,0.06);
-}
-
+/* -------------------------------------- */
 /* QR */
+/* -------------------------------------- */
 #qrCodeCadastro{
   margin-top:12px;
   display:flex;
@@ -153,7 +159,6 @@ button.secondary{
   flex-wrap:wrap;
 }
 
-/* CAMERA */
 #videoWrap{
   max-width:420px;
   margin-top:12px;
@@ -168,7 +173,9 @@ button.secondary{
   display:block;
 }
 
+/* -------------------------------------- */
 /* BUSCA */
+/* -------------------------------------- */
 #inputBusca{
   padding:10px;
   border-radius:8px;
@@ -182,50 +189,10 @@ button.secondary{
   margin-bottom:8px;
 }
 
-#listaHistoricoContainer .card{
-  margin-bottom:10px;
-}
-
-/* MARKETING LIST */
-#marketingList .contact-row{
-  display:flex;
-  align-items:center;
-  gap:10px;
-  padding:8px;
-  border-bottom:1px solid #f0f0f0;
-}
-
-.contact-meta{
-  flex:1;
-}
-
-/* 🔥 CORREÇÃO DOS BOTÕES DO MARKETING */
-#marketingList .contact-actions{
-  display:flex;
-  gap:8px;
-  flex-wrap:wrap;
-  justify-content:flex-end;
-}
-
-#marketingList .contact-actions button{
-  background:var(--orange-strong) !important;
-  color:#fff !important;
-  border:none !important;
-  padding:8px 12px;
-  border-radius:8px;
-  font-weight:700;
-  min-width:90px;
-}
-
-/* Botão VCF (verde-azulado) */
-.btn-vcf{
-  background:var(--teal-light) !important;
-  color:white !important;
-  border:none !important;
-  padding:8px 12px;
-  border-radius:8px;
-  font-weight:700;
-}
+/* -------------------------------------- */
+/* HISTÓRICO */
+/* -------------------------------------- */
+#listaHistoricoContainer .card{margin-bottom:10px}
 
 /* BADGES */
 .badge{
@@ -235,26 +202,65 @@ button.secondary{
   color:#fff;
   font-weight:700;
 }
+.badge.green{background:var(--green)}
+.badge.red{background:var(--red)}
+.badge.yellow{background:var(--yellow);color:#333}
 
-.badge.green{background:var(--green);}
-.badge.red{background:var(--red);}
-.badge.yellow{background:var(--yellow); color:#333;}
+/* -------------------------------------- */
+/* SCAN BUTTON */
+/* -------------------------------------- */
+#btnScanNow{background:#0066cc;color:#fff}
 
-#btnScanNow{
-  background:#0066cc;
-  color:#fff;
+/* -------------------------------------- */
+/* MARKETING LIST */
+/* -------------------------------------- */
+#marketingList .contact-row{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:8px;
+  border-bottom:1px solid #f0f0f0;
 }
 
-@media(min-width:900px){
-  main{padding:24px;}
-  nav{gap:12px;}
+.contact-meta{flex:1}
+
+/* 🔥 Botões Laranja da aba Marketing */
+.contact-actions button{
+  background:var(--orange-strong) !important;
+  color:white !important;
+  border:none !important;
+  padding:6px 10px;
+  border-radius:8px;
+  font-weight:700;
+  min-width:90px;
 }
 
-button + button {
-  margin-left:6px;
+/* 🔥 Botão "Salvar (.vcf)" — verde-azulado */
+.btn-vcf{
+  background:var(--teal-light) !important;
+  color:white !important;
+  border:none !important;
+  padding:6px 12px !important;
+  border-radius:8px !important;
+  font-weight:700 !important;
 }
 
+/* 🔥 Rolagem da lista */
+#marketingList{
+  max-height:75vh;
+  overflow-y:auto;
+}
+
+/* -------------------------------------- */
 /* PRINT */
+/* -------------------------------------- */
+@media(min-width:900px){
+  main{padding:24px}
+  nav{gap:12px}
+}
+
+button + button { margin-left: 6px; }
+
 @media print {
   body * { visibility: hidden; }
   #relatorioPrint, #relatorioPrint * { visibility: visible; }
@@ -266,22 +272,22 @@ button + button {
   }
 }
 
-/* REPORTS */
+/* WATERMARK */
 .report-wrapper{
-  position:relative;
-  padding:18px;
-  min-height:200px;
+  position: relative;
+  padding: 18px;
+  min-height: 200px;
 }
 
 .report-watermark{
-  position:absolute;
-  left:50%;
-  top:50%;
-  transform:translate(-50%,-50%);
-  opacity:0.08;
-  pointer-events:none;
-  width:60%;
-  max-width:500px;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%,-50%);
+  opacity: 0.08;
+  pointer-events: none;
+  width: 60%;
+  max-width: 500px;
 }
 
 .report-title{
@@ -308,12 +314,9 @@ button + button {
   font-size:13px;
 }
 
-.small-muted{
-  color:var(--muted);
-  font-size:13px;
-}
+.small-muted{color:var(--muted);font-size:13px}
 
-/* preview da imagem marketing */
+/* IMAGE PREVIEW */
 #marketingImagePreview{
   display:inline-block;
   position:relative;
