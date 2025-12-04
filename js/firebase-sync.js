@@ -1,56 +1,54 @@
 // firebase-sync.js
 // -------------------------------------------------------
-// Sincronização em tempo real • Firestore ↔ App (Opção A)
+// SINCRONIZAÇÃO EM TEMPO REAL (Modelo A - Prioridade Nuvem)
 // -------------------------------------------------------
 
-// GARANTE QUE O SCRIPT PRINCIPAL JÁ INICIALIZOU O ARRAY
-if (!window.cadastros) window.cadastros = [];
+// Coleção principal no Firestore
+const col = db.collection("cadastros");
 
-// 🔥 Referência da coleção principal
-const colRef = db.collection("cadastros_parquinho");
+// ===========================================
+// 🔥 1) ENVIAR LOCAL → FIREBASE  (UPLOAD)
+// ===========================================
+async function syncUpload(cadastros) {
+  try {
+    for (const c of cadastros) {
+      await col.doc(c.id).set(c, { merge: true });
+    }
+    console.log("UPLOAD → Firebase concluído");
+  } catch (e) {
+    console.error("Erro no upload:", e);
+  }
+}
 
-// 📌 Quando algo mudar no Firestore → atualizar no app
-colRef.orderBy("createdAt", "desc").onSnapshot(snapshot => {
-    const list = [];
-
-    snapshot.forEach(doc => {
-        list.push({ id: doc.id, ...doc.data() });
-    });
-
-    console.log("🔥 Atualização em tempo real recebida:", list);
-
-    // Atualiza array global
-    window.cadastros = list;
+// ===========================================
+// 🔥 2) RECEBER FIREBASE → LOCAL (DOWNLOAD)
+// ===========================================
+function syncRealtime() {
+  col.orderBy("createdAt", "desc").onSnapshot((snap) => {
+    const lista = [];
+    snap.forEach((doc) => lista.push(doc.data()));
 
     // Atualiza localStorage
-    localStorage.setItem("cadastros", JSON.stringify(list));
+    localStorage.setItem("cadastros", JSON.stringify(lista));
 
-    // Recarrega a tela
+    // Atualiza variáveis globais
+    cadastros = lista;
+
+    // Atualiza telas
     if (typeof renderHistorico === "function") renderHistorico();
     if (typeof renderMarketingList === "function") renderMarketingList();
-});
 
-// -----------------------------------------------
-// 🔥 FUNÇÃO: Enviar cadastro para o Firebase
-// -----------------------------------------------
-window.syncUploadCadastro = async function (cadastro) {
-    try {
-        await colRef.doc(cadastro.id).set(cadastro, { merge: true });
-        console.log("✔ Enviado ao Firebase:", cadastro.id);
-    } catch (err) {
-        console.error("Erro ao enviar:", err);
-        alert("Falha ao sincronizar com a nuvem!");
-    }
-};
+    console.log("SINCRONIZAÇÃO EM TEMPO REAL ✔");
+  });
+}
 
-// -----------------------------------------------
-// 🔥 FUNÇÃO: Excluir do Firebase
-// -----------------------------------------------
-window.syncDeleteCadastro = async function(id){
-    try {
-        await colRef.doc(id).delete();
-        console.log("✔ Excluído do Firebase:", id);
-    } catch (err) {
-        console.error("Erro ao excluir:", err);
-    }
-};
+// Inicia sincronização ao carregar
+syncRealtime();
+
+// ===========================================
+// 🔥 3) AUTO-UPLOAD SEMPRE QUE ALTERAR LOCAL
+// ===========================================
+function saveCadastrosFirebase() {
+  saveCadastros();  // salva local
+  syncUpload(cadastros); // sobe p/ Firebase
+}
