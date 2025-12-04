@@ -9,19 +9,18 @@
   <meta name="theme-color" content="#00B3AA" />
   <link rel="stylesheet" href="css/style.css" />
 
-  <!-- Bibliotecas: QRCode + jsQR + SheetJS -->
+  <!-- Bibliotecas -->
   <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jsqr/dist/jsQR.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
-  <!-- ============================================
-       🔥 FIREBASE (modo normal, sem módulos)
-       ============================================ -->
+  <!-- Firebase compat (modo normal, sem módulos) -->
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
 
-  <script src="firebase-config.js"></script>
-  <script src="firebase-sync.js"></script>
+  <!-- ARQUIVOS DE CONFIGURAÇÃO E SINCRONIZAÇÃO -->
+  <script src="js/firebase-config.js"></script>
+  <script src="js/firebase-sync.js"></script>
 </head>
 
 <body>
@@ -33,21 +32,17 @@
     <nav>
       <button data-tab="cadastro" class="active">Cadastro</button>
       <button data-tab="busca">Busca</button>
-      <button data-tab="historico">Histórico</button>
+      <button data-tab="historico">Historico</button>
       <button data-tab="marketing">Marketing</button>
       <button data-tab="impressao">Impressão</button>
     </nav>
   </header>
 
   <main>
-    <!-- ==========================================================
-         🔵 SUA ESTRUTURA HTML COMPLETA — SEM ALTERAÇÕES
-         (Todo o conteúdo abaixo é exatamente igual ao que você me enviou.)
-         ========================================================== -->
-
-    <!-- CADASTRO -->
+    <!-- ============================ CADASTRO ============================ -->
     <section id="cadastro" class="tab active">
       <form id="formCadastro" autocomplete="off">
+
         <label>Tipo de ingresso / pulseira:
           <select name="tipoIngresso" id="tipoIngresso" required>
             <option value="inteira">Inteira — R$ 35,90</option>
@@ -99,7 +94,7 @@
           </select>
         </label>
 
-        <label>Mesa (ex: Mesa 12 / A5):
+        <label>Mesa:
           <input type="text" name="mesa" />
         </label>
 
@@ -174,18 +169,18 @@
       </div>
     </section>
 
-    <!-- BUSCA -->
+    <!-- ============================ BUSCA ============================ -->
     <section id="busca" class="tab">
-      <input type="text" id="inputBusca" placeholder="Buscar por nome, telefone, email, mesa ou pulseira (ID)..." />
+      <input type="text" id="inputBusca" placeholder="Buscar..." />
       <ul id="listaBusca"></ul>
     </section>
 
-    <!-- HISTÓRICO -->
+    <!-- ============================ HISTÓRICO ============================ -->
     <section id="historico" class="tab">
       <h2>Histórico de Cadastros e Movimentações</h2>
 
       <div class="card">
-        <label>Filtrar histórico por datas (Início / Fim):
+        <label>Filtrar histórico por datas:
           <div class="row">
             <input type="date" id="histFrom" />
             <input type="date" id="histTo" />
@@ -199,43 +194,44 @@
 
       <div class="row">
         <button id="btnExportJSON">Exportar Excel</button>
-        <button id="btnLimparTudo">Limpar tudo (apagar local)</button>
+        <button id="btnLimparTudo">Limpar tudo</button>
       </div>
     </section>
 
-    <!-- MARKETING -->
+    <!-- ============================ MARKETING ============================ -->
     <section id="marketing" class="tab">
       <h2>Marketing & Contatos</h2>
 
       <div class="card">
         <h4>Mensagem / Promoção</h4>
-        <textarea id="marketingMessage" placeholder="Escreva a mensagem a enviar..."></textarea>
 
-        <label>Anexar imagem (opcional):
+        <textarea id="marketingMessage" placeholder="Escreva a mensagem..."></textarea>
+
+        <label>Anexar imagem:
           <input type="file" id="marketingImage" accept="image/*" />
         </label>
 
         <div id="marketingImagePreview" style="margin-top:10px; display:none; position:relative;">
-          <img id="marketingPreviewImg" src="" alt="preview" style="max-width:180px;border-radius:8px;border:1px solid #ddd">
-          <button id="marketingRemoveImg" title="Remover imagem" style="position:absolute; top:-8px; right:-8px; background:#e74c3c; color:#fff; border:none; border-radius:50%; width:26px; height:26px; font-weight:700; cursor:pointer">×</button>
+          <img id="marketingPreviewImg" src="" alt="preview">
+          <button id="marketingRemoveImg">×</button>
         </div>
 
-        <div class="row" style="margin-top:10px">
+        <div class="row">
           <button id="btnSelectAll">Selecionar todos</button>
           <button id="btnClearAll">Limpar seleção</button>
           <button id="btnSaveSelectedVCF">Salvar selecionados (.vcf)</button>
-          <button id="btnSaveAllVCF" class="secondary">Salvar TODOS (.vcf)</button>
+          <button id="btnSaveAllVCF" class="secondary">Salvar TODOS</button>
           <button id="btnSendToSelected">Enviar para selecionados</button>
         </div>
       </div>
 
-      <div class="card" id="marketingListWrapper">
-        <h4>Lista de clientes (todos os cadastros)</h4>
+      <div class="card">
+        <h4>Lista de clientes</h4>
         <div id="marketingList"></div>
       </div>
     </section>
 
-    <!-- IMPRESSÃO -->
+    <!-- ============================ IMPRESSÃO ============================ -->
     <section id="impressao" class="tab">
       <h2>Impressão</h2>
 
@@ -261,22 +257,22 @@
 
           <button id="btnFiltrar">Filtrar</button>
           <button id="btnImprimirFiltro">Imprimir</button>
-          <button id="btnVoltarImpressao" type="button" style="background:#555">Voltar</button>
+          <button id="btnVoltarImpressao" style="background:#555">Voltar</button>
         </div>
 
-        <label style="margin-top:10px">Ocorrências / Demandas / Observações do parquinho:
-          <textarea id="impressaoObservacoes" placeholder="Ex: manutenção, demanda X..."></textarea>
+        <label>Observações:
+          <textarea id="impressaoObservacoes"></textarea>
         </label>
       </div>
 
       <div id="relatorioPreview" class="card"></div>
-      <div id="faturamentoResumo" class="card" style="margin-top:8px"></div>
+      <div id="faturamentoResumo" class="card"></div>
     </section>
+
   </main>
 
-  <!-- =======================
-       🔵 Seu script principal
-       ======================= -->
+  <!-- SCRIPT PRINCIPAL -->
   <script src="js/script.js"></script>
+
 </body>
 </html>
