@@ -1,9 +1,8 @@
 // firebase-config.js
-// -------------------------------------------
+// -------------------------------------------------------
 // Inicialização do Firebase (Modo Normal - compat)
-// -------------------------------------------
+// -------------------------------------------------------
 
-// 🔥 CONFIG DO SEU PROJETO FIREBASE
 const firebaseConfig = {
   apiKey: "AIzaSyDO9p1eYNtw-JRZ1QVpapRgtuz5wQ3JgBA",
   authDomain: "parquinho-app.firebaseapp.com",
@@ -14,10 +13,10 @@ const firebaseConfig = {
   measurementId: "G-HMQ2REK0G9"
 };
 
-// 🔥 Inicializa o Firebase
+// Inicializa Firebase
 firebase.initializeApp(firebaseConfig);
 
-// 🔥 Instância do Firestore
+// Firestore
 const db = firebase.firestore();
 
-console.log("Firebase carregado com sucesso!");
+console.log("🔥 Firebase carregado com sucesso!");
