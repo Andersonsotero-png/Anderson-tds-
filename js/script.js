@@ -1,4 +1,3 @@
-JS último 
 
 // script.js — Versão final solicitada (alterações: histórico top, permanência Opção A, VCF, etc.)
 
