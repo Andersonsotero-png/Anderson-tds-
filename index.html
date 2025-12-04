@@ -9,16 +9,18 @@
   <meta name="theme-color" content="#00B3AA" />
   <link rel="stylesheet" href="css/style.css" />
 
-  <!-- Bibliotecas -->
+  <!-- Bibliotecas: QRCode + jsQR + SheetJS -->
   <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jsqr/dist/jsQR.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
-  <!-- Firebase compat (modo normal, sem módulos) -->
+  <!-- ======================================================
+       🔥 FIREBASE (modo compat – recomendado para seu app)
+       ====================================================== -->
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
 
-  <!-- ARQUIVOS DE CONFIGURAÇÃO E SINCRONIZAÇÃO -->
+  <!-- Seus arquivos Firebase (AGORA CORRETOS) -->
   <script src="js/firebase-config.js"></script>
   <script src="js/firebase-sync.js"></script>
 </head>
@@ -29,6 +31,7 @@
       <img alt="logo" id="appLogo" src="assets/icons/icon-512.png" />
       <h1 id="appTitle">Parquinho App - Terra do Sol</h1>
     </div>
+
     <nav>
       <button data-tab="cadastro" class="active">Cadastro</button>
       <button data-tab="busca">Busca</button>
@@ -39,7 +42,10 @@
   </header>
 
   <main>
-    <!-- ============================ CADASTRO ============================ -->
+
+    <!-- ==========================================================
+         🔵 CADASTRO
+         ========================================================== -->
     <section id="cadastro" class="tab active">
       <form id="formCadastro" autocomplete="off">
 
@@ -78,7 +84,7 @@
           <input type="text" name="responsavel" />
         </label>
 
-        <label>Telefone do responsável:
+        <label>Telefone:
           <input type="tel" name="telefone" placeholder="+55..." />
         </label>
 
@@ -123,9 +129,7 @@
           </select>
         </label>
 
-        <div style="margin-top:8px">
-          <span id="liveBadge" class="badge red">NÃO SAI SOZINHO</span>
-        </div>
+        <span id="liveBadge" class="badge red">NÃO SAI SOZINHO</span>
 
         <label>Observações:
           <textarea name="observacoes"></textarea>
@@ -143,19 +147,19 @@
 
         <div class="row">
           <button id="btnDownloadQR">Baixar QR</button>
-          <button id="btnPrintLabel">Imprimir etiqueta (4x4cm)</button>
-          <button id="btnPrintLabelSmall">Imprimir etiqueta pequena</button>
+          <button id="btnPrintLabel">Etiqueta (4cm)</button>
+          <button id="btnPrintLabelSmall">Etiqueta pequena</button>
         </div>
       </div>
 
       <hr />
 
-      <div id="cameraControls" class="card">
-        <h3>Leitor de QR (Câmera)</h3>
+      <div class="card" id="cameraControls">
+        <h3>Leitor de QR</h3>
 
         <div class="row">
           <button id="btnStartCamera">Abrir câmera</button>
-          <button id="btnStopCamera" disabled>Fechar câmera</button>
+          <button id="btnStopCamera" disabled>Fechar</button>
           <button id="btnScanNow" disabled>Registrar Entrada/Saída</button>
           <button id="btnRegistrarManual">Registrar Manual</button>
         </div>
@@ -165,22 +169,26 @@
           <canvas id="scanCanvas" hidden></canvas>
         </div>
 
-        <div id="scanMessage" style="margin-top:8px"></div>
+        <div id="scanMessage"></div>
       </div>
     </section>
 
-    <!-- ============================ BUSCA ============================ -->
+    <!-- ==========================================================
+         BUSCA
+         ========================================================== -->
     <section id="busca" class="tab">
       <input type="text" id="inputBusca" placeholder="Buscar..." />
       <ul id="listaBusca"></ul>
     </section>
 
-    <!-- ============================ HISTÓRICO ============================ -->
+    <!-- ==========================================================
+         HISTÓRICO
+         ========================================================== -->
     <section id="historico" class="tab">
-      <h2>Histórico de Cadastros e Movimentações</h2>
+      <h2>Histórico</h2>
 
       <div class="card">
-        <label>Filtrar histórico por datas:
+        <label>Filtro por datas:
           <div class="row">
             <input type="date" id="histFrom" />
             <input type="date" id="histTo" />
@@ -194,44 +202,47 @@
 
       <div class="row">
         <button id="btnExportJSON">Exportar Excel</button>
-        <button id="btnLimparTudo">Limpar tudo</button>
+        <button id="btnLimparTudo">Apagar tudo (local)</button>
       </div>
     </section>
 
-    <!-- ============================ MARKETING ============================ -->
+    <!-- ==========================================================
+         MARKETING
+         ========================================================== -->
     <section id="marketing" class="tab">
       <h2>Marketing & Contatos</h2>
 
       <div class="card">
-        <h4>Mensagem / Promoção</h4>
+        <h4>Mensagem</h4>
+        <textarea id="marketingMessage"></textarea>
 
-        <textarea id="marketingMessage" placeholder="Escreva a mensagem..."></textarea>
-
-        <label>Anexar imagem:
+        <label>Imagem:
           <input type="file" id="marketingImage" accept="image/*" />
         </label>
 
-        <div id="marketingImagePreview" style="margin-top:10px; display:none; position:relative;">
-          <img id="marketingPreviewImg" src="" alt="preview">
+        <div id="marketingImagePreview" style="display:none;">
+          <img id="marketingPreviewImg" />
           <button id="marketingRemoveImg">×</button>
         </div>
 
         <div class="row">
           <button id="btnSelectAll">Selecionar todos</button>
-          <button id="btnClearAll">Limpar seleção</button>
+          <button id="btnClearAll">Limpar</button>
           <button id="btnSaveSelectedVCF">Salvar selecionados (.vcf)</button>
-          <button id="btnSaveAllVCF" class="secondary">Salvar TODOS</button>
-          <button id="btnSendToSelected">Enviar para selecionados</button>
+          <button id="btnSaveAllVCF" class="secondary">Salvar TODOS (.vcf)</button>
+          <button id="btnSendToSelected">Enviar</button>
         </div>
       </div>
 
-      <div class="card">
+      <div class="card" id="marketingListWrapper">
         <h4>Lista de clientes</h4>
         <div id="marketingList"></div>
       </div>
     </section>
 
-    <!-- ============================ IMPRESSÃO ============================ -->
+    <!-- ==========================================================
+         IMPRESSÃO
+         ========================================================== -->
     <section id="impressao" class="tab">
       <h2>Impressão</h2>
 
@@ -260,9 +271,7 @@
           <button id="btnVoltarImpressao" style="background:#555">Voltar</button>
         </div>
 
-        <label>Observações:
-          <textarea id="impressaoObservacoes"></textarea>
-        </label>
+        <textarea id="impressaoObservacoes" placeholder="Ocorrências / Demandas..."></textarea>
       </div>
 
       <div id="relatorioPreview" class="card"></div>
@@ -271,7 +280,7 @@
 
   </main>
 
-  <!-- SCRIPT PRINCIPAL -->
+  <!-- Seu script principal -->
   <script src="js/script.js"></script>
 
 </body>
