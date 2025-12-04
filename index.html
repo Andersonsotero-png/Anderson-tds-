@@ -14,15 +14,13 @@
   <script src="https://cdn.jsdelivr.net/npm/jsqr/dist/jsQR.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
-  <!-- ======================================================
-       🔥 FIREBASE (modo compat – recomendado para seu app)
-       ====================================================== -->
+  <!-- 🔥 FIREBASE MODO NORMAL (compat) -->
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
 
-  <!-- Seus arquivos Firebase (AGORA CORRETOS) -->
-  <script src="js/firebase-config.js"></script>
-  <script src="js/firebase-sync.js"></script>
+  <!-- 🔥 Seus arquivos Firebase -->
+  <script src="firebase-config.js"></script>
+  <script src="firebase-sync.js"></script>
 </head>
 
 <body>
@@ -31,7 +29,6 @@
       <img alt="logo" id="appLogo" src="assets/icons/icon-512.png" />
       <h1 id="appTitle">Parquinho App - Terra do Sol</h1>
     </div>
-
     <nav>
       <button data-tab="cadastro" class="active">Cadastro</button>
       <button data-tab="busca">Busca</button>
@@ -42,10 +39,9 @@
   </header>
 
   <main>
-
-    <!-- ==========================================================
-         🔵 CADASTRO
-         ========================================================== -->
+    <!-- =====================
+         🔵  ABA: CADASTRO
+    ====================== -->
     <section id="cadastro" class="tab active">
       <form id="formCadastro" autocomplete="off">
 
@@ -84,7 +80,7 @@
           <input type="text" name="responsavel" />
         </label>
 
-        <label>Telefone:
+        <label>Telefone do responsável:
           <input type="tel" name="telefone" placeholder="+55..." />
         </label>
 
@@ -129,7 +125,9 @@
           </select>
         </label>
 
-        <span id="liveBadge" class="badge red">NÃO SAI SOZINHO</span>
+        <div style="margin-top:8px">
+          <span id="liveBadge" class="badge red">NÃO SAI SOZINHO</span>
+        </div>
 
         <label>Observações:
           <textarea name="observacoes"></textarea>
@@ -144,22 +142,20 @@
       <div id="resultCadastro" class="card">
         <h3>Último QR gerado</h3>
         <div id="qrCodeCadastro"></div>
-
         <div class="row">
           <button id="btnDownloadQR">Baixar QR</button>
-          <button id="btnPrintLabel">Etiqueta (4cm)</button>
+          <button id="btnPrintLabel">Imprimir etiqueta</button>
           <button id="btnPrintLabelSmall">Etiqueta pequena</button>
         </div>
       </div>
 
       <hr />
 
-      <div class="card" id="cameraControls">
-        <h3>Leitor de QR</h3>
-
+      <div id="cameraControls" class="card">
+        <h3>Leitor de QR (Câmera)</h3>
         <div class="row">
           <button id="btnStartCamera">Abrir câmera</button>
-          <button id="btnStopCamera" disabled>Fechar</button>
+          <button id="btnStopCamera" disabled>Fechar câmera</button>
           <button id="btnScanNow" disabled>Registrar Entrada/Saída</button>
           <button id="btnRegistrarManual">Registrar Manual</button>
         </div>
@@ -173,22 +169,21 @@
       </div>
     </section>
 
-    <!-- ==========================================================
-         BUSCA
-         ========================================================== -->
+    <!-- =====================
+         🔵  ABA BUSCA
+    ====================== -->
     <section id="busca" class="tab">
-      <input type="text" id="inputBusca" placeholder="Buscar..." />
+      <input type="text" id="inputBusca" placeholder="Buscar por nome, mesa, tel..." />
       <ul id="listaBusca"></ul>
     </section>
 
-    <!-- ==========================================================
-         HISTÓRICO
-         ========================================================== -->
+    <!-- =====================
+         🔵  HISTÓRICO
+    ====================== -->
     <section id="historico" class="tab">
-      <h2>Histórico</h2>
-
+      <h2>Histórico de Cadastros</h2>
       <div class="card">
-        <label>Filtro por datas:
+        <label>Filtrar histórico:
           <div class="row">
             <input type="date" id="histFrom" />
             <input type="date" id="histTo" />
@@ -197,52 +192,51 @@
           </div>
         </label>
       </div>
-
       <div id="listaHistoricoContainer"></div>
 
       <div class="row">
         <button id="btnExportJSON">Exportar Excel</button>
-        <button id="btnLimparTudo">Apagar tudo (local)</button>
+        <button id="btnLimparTudo">Limpar tudo</button>
       </div>
     </section>
 
-    <!-- ==========================================================
-         MARKETING
-         ========================================================== -->
+    <!-- =====================
+         🔵 MARKETING
+    ====================== -->
     <section id="marketing" class="tab">
       <h2>Marketing & Contatos</h2>
 
       <div class="card">
-        <h4>Mensagem</h4>
+        <h4>Mensagem / Promoção</h4>
         <textarea id="marketingMessage"></textarea>
 
-        <label>Imagem:
+        <label>Anexar imagem:
           <input type="file" id="marketingImage" accept="image/*" />
         </label>
 
-        <div id="marketingImagePreview" style="display:none;">
-          <img id="marketingPreviewImg" />
-          <button id="marketingRemoveImg">×</button>
+        <div id="marketingImagePreview" style="display:none; margin-top:10px; position:relative;">
+          <img id="marketingPreviewImg" style="max-width:180px;border-radius:8px;border:1px solid #ddd" />
+          <button id="marketingRemoveImg" style="position:absolute;top:-8px;right:-8px;background:#e74c3c;color:white;border:none;border-radius:50%;width:26px;height:26px;font-weight:700">×</button>
         </div>
 
         <div class="row">
           <button id="btnSelectAll">Selecionar todos</button>
           <button id="btnClearAll">Limpar</button>
           <button id="btnSaveSelectedVCF">Salvar selecionados (.vcf)</button>
-          <button id="btnSaveAllVCF" class="secondary">Salvar TODOS (.vcf)</button>
+          <button id="btnSaveAllVCF" class="secondary">Salvar todos (.vcf)</button>
           <button id="btnSendToSelected">Enviar</button>
         </div>
       </div>
 
-      <div class="card" id="marketingListWrapper">
+      <div class="card">
         <h4>Lista de clientes</h4>
         <div id="marketingList"></div>
       </div>
     </section>
 
-    <!-- ==========================================================
-         IMPRESSÃO
-         ========================================================== -->
+    <!-- =====================
+         🔵 IMPRESSÃO
+    ====================== -->
     <section id="impressao" class="tab">
       <h2>Impressão</h2>
 
@@ -268,20 +262,22 @@
 
           <button id="btnFiltrar">Filtrar</button>
           <button id="btnImprimirFiltro">Imprimir</button>
-          <button id="btnVoltarImpressao" style="background:#555">Voltar</button>
+          <button id="btnVoltarImpressao" type="button" style="background:#555">Voltar</button>
         </div>
 
-        <textarea id="impressaoObservacoes" placeholder="Ocorrências / Demandas..."></textarea>
+        <label style="margin-top:10px">
+          Observações / ocorrências:
+          <textarea id="impressaoObservacoes"></textarea>
+        </label>
       </div>
 
       <div id="relatorioPreview" class="card"></div>
-      <div id="faturamentoResumo" class="card"></div>
+      <div id="faturamentoResumo" class="card" style="margin-top:10px"></div>
     </section>
 
   </main>
 
-  <!-- Seu script principal -->
+  <!-- 🔵 JavaScript principal -->
   <script src="js/script.js"></script>
-
 </body>
 </html>
